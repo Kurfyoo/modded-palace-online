@@ -157,6 +157,47 @@ input[type=number] {
 	margin: 8px 0;
 }
 
+.character-import details {
+	margin-top: 12px;
+}
+
+.character-import summary {
+	cursor: pointer;
+	color: var(--gold);
+}
+
+.character-ability {
+	display: grid;
+	gap: 8px;
+	margin: 10px 0;
+	border: 1px solid rgba(244, 237, 220, 0.35);
+	border-radius: 6px;
+}
+
+.character-ability label,
+.creator-evolution label {
+	display: grid;
+	gap: 4px;
+	margin: 6px 0;
+}
+
+.character-ability textarea {
+	width: 100%;
+	font: inherit;
+}
+
+.creator-evolution {
+	border-left: 2px solid var(--gold);
+	padding-left: 10px;
+}
+
+.player-abilities {
+	display: block;
+	margin: 5px 0;
+	padding: 4px 8px;
+	font-size: 0.8rem;
+}
+
 .panel label {
 	margin-right: 14px;
 }
