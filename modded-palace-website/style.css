@@ -18,6 +18,12 @@ body {
 	min-height: 100vh;
 }
 
+a {
+	color: var(--gold);
+	font-style: italic;
+	text-decoration: none;
+}
+
 h1, h2, h3 {
 	margin: 0.4em 0;
 }
@@ -486,6 +492,27 @@ header {
 	border: 1px solid rgba(244, 237, 220, 0.22);
 	border-radius: 8px;
 	background: rgba(16, 42, 35, 0.5);
+}
+
+.hand-header {
+	display: grid;
+	grid-template-columns: 1fr minmax(0, 2fr) 1fr;
+	align-items: start;
+	min-height: 1.6em;
+	margin-bottom: 6px;
+}
+
+.hand-player-label {
+	grid-column: 1;
+	grid-row: 1;
+	justify-self: start;
+}
+
+#hand-title {
+	grid-column: 2;
+	grid-row: 1;
+	margin: 0;
+	text-align: center;
 }
 
 .card {

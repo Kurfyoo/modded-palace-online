@@ -37,13 +37,13 @@
 			</header>
 			<div class="columns">
 				<section>
-					<h2>Your character</h2>
+					<h2>Your Character</h2>
 					<div id="character-list" class="list"></div>
 					<div id="character-details" class="panel" aria-live="polite"></div>
 					<a class="button-link" href="characters.html" target="_blank" rel="noopener">All character descriptions</a>
 				</section>
 				<section>
-					<h2>Game setup</h2>
+					<h2>Game Setup</h2>
 					<div class="panel">
 						<label>Players <input id="player-count" type="number" min="2" value="6"></label>
 						<label>Decks <input id="deck-count" type="number" min="1" value="3"></label>
@@ -80,8 +80,11 @@
 					</div>
 				</section>
 				<aside id="right-players" class="opponent-rail" aria-label="Opponents on the right"></aside>
-				<section id="hand-area" aria-label="Your cards">
-					<h2 id="hand-title"></h2>
+				<section id="hand-area" aria-label="Your Cards">
+					<div class="hand-header">
+						<strong class="hand-player-label">You</strong>
+						<h2 id="hand-title"></h2>
+					</div>
 					<div class="hand-content">
 						<div id="cards" class="cards"></div>
 						<div class="hand-controls">

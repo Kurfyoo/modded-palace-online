@@ -444,7 +444,7 @@ function renderPiles() {
 
 function playerZone(title, count, cards) {
 	return el("div", { class: "player-zone" },
-		el("span", { class: "zone-label" }, `${title} · ${count}`),
+		el("span", { class: "zone-label" }, title ? `${title} · ${count}` : `${count} cards`),
 		cards.length
 			? el("div", { class: "mini-cards" }, ...cards)
 			: el("div", { class: "mini-cards empty-zone" }, "Empty"));
@@ -488,7 +488,7 @@ function renderHand() {
 	draw.replaceChildren();
 
 	if (st.phase === "over") {
-		$("hand-title").textContent = "Final standings";
+		$("hand-title").textContent = "Final Standings";
 		const table = el("table", { class: "standings" });
 		st.standings.forEach((row) => {
 			table.append(el("tr", {},
@@ -500,7 +500,7 @@ function renderHand() {
 	}
 
 	if (st.phase === "setup") {
-		$("hand-title").textContent = `${st.me.name}: choose 3 face-up cards | ${setupSel.size}/3 selected`;
+		$("hand-title").textContent = `CHOOSE 3 FACE-UP CARDS | ${setupSel.size}/3 SELECTED`;
 		st.me.hand.forEach((card, index) => {
 			cards.append(cardNode(card, {
 				selected: setupSel.has(index),
@@ -529,9 +529,9 @@ function renderHand() {
 	if (!me.is_current) {
 		$("hand-title").textContent = st.players[st.current].bot ? "Bots are playing" : `Waiting for ${st.players[st.current].name}`;
 	} else if (revealing) {
-		$("hand-title").textContent = `${me.name}: choose a card from your hand to reveal`;
+		$("hand-title").textContent = "Choose a card from your hand to reveal";
 	} else {
-		$("hand-title").textContent = source ? `${st.hot_seat ? me.name + "'s" : "Your"} ${source.replace("_", " ")}` : "No cards available";
+		$("hand-title").textContent = source ? "" : "No cards available";
 	}
 	const handCards = me.hand.map((card, index) => {
 		const active = me.is_current && (revealing || source === "hand");
@@ -549,7 +549,7 @@ function renderHand() {
 		return hiddenNode(index, card.known, options);
 	});
 	cards.append(el("div", { class: "own-card-zones" },
-		playerZone("Hand", me.hand.length, handCards),
+		playerZone(null, me.hand.length, handCards),
 		playerZone("Face-Up", me.face_up.length, faceUpCards),
 		playerZone("Face-Down", me.face_down.length, faceDownCards)));
 
