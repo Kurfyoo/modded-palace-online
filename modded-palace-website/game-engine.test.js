@@ -22,14 +22,26 @@ function finishSetup(bridge, state) {
 	return state;
 }
 
-test("catalog keeps both characters, abilities, reusable rules, and defaults", () => {
+test("catalog keeps gameplay metadata without embedding page descriptions", () => {
 	const bridge = createBridge();
 	const catalog = JSON.parse(bridge.get_catalog());
 	assert.deepEqual(catalog.characters.map((character) => character.name), ["Sukuna", "Gojo"]);
-	assert.ok(catalog.characters.every((character) => character.tracks.every((track) => Array.isArray(track.rules))));
+	assert.ok(catalog.characters.every((character) => character.tracks.every((track) =>
+		typeof track.ability === "string" && Array.isArray(track.rules)
+		&& (!track.evolution || typeof track.evolution.ability === "string" && Array.isArray(track.evolution.rules))
+		&& !Object.hasOwn(track, "description")
+		&& !Object.hasOwn(track.evolution || {}, "description"))));
 	assert.equal(catalog.defaults.players, 6);
-	assert.ok(catalog.rules["Stack destroy"]);
-	assert.match(catalog.domain_rule, /Domain Clashing/);
+	assert.equal(Object.hasOwn(catalog, "rules"), false);
+	assert.equal(Object.hasOwn(catalog, "domain_rule"), false);
+	const indexHtml = fs.readFileSync(new URL("./index.html", `file://${__filename}`), "utf8");
+	const charactersHtml = fs.readFileSync(new URL("./characters.html", `file://${__filename}`), "utf8");
+	const rulesHtml = fs.readFileSync(new URL("./rules.html", `file://${__filename}`), "utf8");
+	assert.match(indexHtml, /id="character-details"/);
+	assert.deepEqual([...charactersHtml.matchAll(/data-character="([^"]+)"/g)].map((match) => match[1]), ["Sukuna", "Gojo"]);
+	assert.match(charactersHtml, /Spider Net Cleave/);
+	assert.match(rulesHtml, /Domain Clashing/);
+	assert.doesNotMatch(charactersHtml + rulesHtml, /<script\b/i);
 });
 
 test("new games validate player, deck, and human-player requirements", () => {

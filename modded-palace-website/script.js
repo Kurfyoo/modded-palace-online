@@ -6,6 +6,7 @@ const RANK_SHORT = { Jack: "J", Queen: "Q", King: "K", Ace: "A" };
 let bridge = null;
 let catalog = null;
 let selectedCharacter = null;
+let characterDescriptions = null;
 let state = null;
 let selCard = null;
 let selPile = null;
@@ -42,7 +43,7 @@ function boot() {
 	$("loading").hidden = true;
 	buildSetup();
 	$("setup").hidden = false;
-	if (location.hash === "#rules") openRules();
+	loadCharacterDescriptions();
 }
 
 try {
@@ -53,51 +54,29 @@ try {
 
 // ---------------------------------------------------------------- setup screen
 
-function showRule(name) {
-	showDialog(name, el("p", {}, catalog.rules[name]), [{ label: "Close" }]);
-}
-
-// Turns known multi use rule names inside a description into clickable underlined links.
-function withRules(text, rules) {
-	const container = el("span");
-	let pieces = [text];
-	for (const rule of rules) {
-		pieces = pieces.flatMap((piece) => {
-			if (typeof piece !== "string") return [piece];
-			const out = [];
-			const lower = piece.toLowerCase();
-			const needle = rule.toLowerCase();
-			let position = 0;
-			let found = lower.indexOf(needle, position);
-			while (found !== -1) {
-				out.push(piece.slice(position, found));
-				out.push(el("span", { class: "rule", onclick: () => showRule(rule) }, piece.slice(found, found + rule.length)));
-				position = found + rule.length;
-				found = lower.indexOf(needle, position);
-			}
-			out.push(piece.slice(position));
-			return out;
-		});
+async function loadCharacterDescriptions() {
+	try {
+		const response = await fetch("characters.html");
+		if (!response.ok) throw new Error("Could not load character descriptions.");
+		const page = new DOMParser().parseFromString(await response.text(), "text/html");
+		const sheets = [...page.querySelectorAll(".character-sheet[data-character]")];
+		characterDescriptions = new Map(sheets.map((sheet) => [sheet.dataset.character, sheet]));
+		renderCharacterDetails();
+	} catch {
+		$("character-details").replaceChildren(el("p", {},
+			"Character descriptions could not be loaded. ",
+			el("a", { href: "characters.html", target: "_blank", rel: "noopener" }, "Open all character descriptions.")));
 	}
-	container.append(...pieces.map((piece) => (typeof piece === "string" ? document.createTextNode(piece) : piece)));
-	return container;
 }
 
 function renderCharacterDetails() {
-	const character = catalog.characters.find((entry) => entry.name === selectedCharacter);
 	const box = $("character-details");
-	box.replaceChildren(el("h3", {}, character.name));
-	for (const track of character.tracks) {
-		const block = el("div", { class: "track" },
-			el("strong", {}, track.ability), el("br"),
-			withRules(track.description, track.rules));
-		if (track.evolution) {
-			block.append(el("br"), el("strong", {}, "Evolution: " + track.evolution.ability), el("br"),
-				withRules(track.evolution.description, track.evolution.rules));
-		}
-		box.append(block);
+	const sheet = characterDescriptions?.get(selectedCharacter);
+	if (!sheet) {
+		box.replaceChildren(el("p", { class: "hint" }, "Loading character descriptions..."));
+		return;
 	}
-	box.append(el("p", { class: "hint" }, "Each evolution needs a Joker in hand before you play any cards and ends your turn. Underlined rule names can be clicked to read what they do."));
+	box.replaceChildren(...[...sheet.children].slice(1).map((node) => node.cloneNode(true)));
 }
 
 function buildSetup() {
@@ -212,80 +191,6 @@ function showAsk(ask, answers, action) {
 
 $("show-log").addEventListener("click", () => {
 	if (state) showDialog("Action log", el("pre", {}, state.log.join("\n")), [{ label: "Close" }]);
-});
-
-// ---------------------------------------------------------------- rules page
-
-const RULES_SECTIONS = [
-	["Goal", [
-		"Get rid of all of your cards before everyone else. Cards are played from your hand first, then your face-up cards, then your face-down cards. Players who run out finish in order; the last player left is last place.",
-	]],
-	["Setup", [
-		"Every player is dealt 3 face-down cards and 6 cards in hand, then keeps 3 of the 6 face-up on the table. The rest of the deck is split into two draw piles. One card from each draw pile starts the two discard piles (a Joker is reshuffled back; a 10 destroys its pile right away).",
-		"You choose the number of players (human or bot), the number of 52-card decks and the number of Jokers before the game starts.",
-	]],
-	["Taking a turn", [
-		"There are two discard piles. On your turn you choose one of them and play at least one card on it. Any extra cards you play in the same turn must go on that same pile. Press End turn when you are done.",
-		"Your hand is topped up to 3 cards after each play while the draw piles last. Face-Up cards can only be played once your hand and both draw piles are empty, and face-down cards after that (you play them blind).",
-		"The first card you play must be equal to or higher than the top card of the pile (Jack 11, Queen 12, King 13, Ace 14). An empty pile accepts anything.",
-		"After your first card, you can keep stacking on the pile you just played on, as long as each card is the same value as the top card or exactly one higher.",
-	]],
-	["Special cards", [
-		"2: can be played on anything as your first card, and later only on top of an Ace or another 2.",
-		"10: as the first card of your turn it can be played on anything. Any 10 destroys the whole pile it is played on, moving it to the destroyed pile.",
-		"Joker: wild. You choose its value from 2 to 14 when you play it. A Joker in hand before you play can also be spent to evolve an ability (see characters). Face-down Jokers count as Aces.",
-		"Ace: the highest card. Only an Ace, a 2, a 10 or a Joker can go on top of an Ace.",
-	]],
-	["Picking up", [
-		"If you cannot play, or your first card is illegal, you pick up both discard piles and your turn ends. An illegal card after your first play is blocked and ends your turn without picking anything up. A face-down card that turns out to be illegal also makes you pick up both piles.",
-	]],
-	["Characters, abilities and evolutions", [
-		"Each player has a character with abilities. Some abilities can evolve: spend a Joker from your hand before you play any card and your turn ends, but the ability becomes its evolved version. Evolved abilities keep the base ability's behavior unless stated otherwise.",
-		"Abilities whose name contains (Domain) are domains and follow Domain Clashing, below.",
-	]],
-];
-
-function buildRulesPage() {
-	const box = $("rules-content");
-	box.replaceChildren();
-	for (const [title, paragraphs] of RULES_SECTIONS) {
-		box.append(el("div", { class: "panel" }, el("h2", {}, title), ...paragraphs.map((text) => el("p", {}, text))));
-	}
-	const multi = el("div", { class: "panel" },
-		el("h2", {}, "Multi-use rules"),
-		el("p", {}, "Abilities are built from these reusable rules. Characters can gain them from their abilities, and God of Jujutsu lets its owner use any of them."));
-	for (const [name, text] of Object.entries(catalog.rules)) {
-		multi.append(el("p", {}, el("strong", {}, name), el("br"), text));
-	}
-	box.append(multi);
-	box.append(el("div", { class: "panel" }, el("h2", {}, "Domain Clashing"), el("pre", { class: "plain" }, catalog.domain_rule)));
-}
-
-let viewBeforeRules = "setup";
-
-function openRules() {
-	if (!$("rules-page").hidden) return;
-	viewBeforeRules = !$("game").hidden ? "game" : "setup";
-	$("setup").hidden = true;
-	$("game").hidden = true;
-	buildRulesPage();
-	$("rules-page").hidden = false;
-	window.scrollTo(0, 0);
-	if (location.hash !== "#rules") location.hash = "rules";
-}
-
-function closeRules() {
-	if ($("rules-page").hidden) return;
-	$("rules-page").hidden = true;
-	$(viewBeforeRules).hidden = false;
-	if (location.hash === "#rules") history.replaceState(null, "", location.pathname + location.search);
-}
-
-document.querySelectorAll(".open-rules").forEach((button) => button.addEventListener("click", openRules));
-$("rules-back").addEventListener("click", closeRules);
-window.addEventListener("hashchange", () => {
-	if (location.hash === "#rules") openRules();
-	else closeRules();
 });
 
 // ---------------------------------------------------------------- admin menu

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Palace Rules</title>
+		<link href="https://fonts.googleapis.com/css?family=Lexend" rel="stylesheet">
+		<link rel="stylesheet" href="style.css">
+	</head>
+	<body>
+		<main class="reference-page" id="rules-page">
+			<header class="reference-header">
+				<h1>Palace Rules</h1>
+				<a class="button-link" href="index.html" target="_blank" rel="noopener">Open game</a>
+			</header>
+
+			<section class="panel">
+				<h2>Goal</h2>
+				<p>Get rid of all of your cards before everyone else. Cards are played from your hand first, then your face-up cards, then your face-down cards. Players who run out finish in order; the last player left is last place.</p>
+			</section>
+
+			<section class="panel">
+				<h2>Setup</h2>
+				<p>Every player is dealt 3 face-down cards and 6 cards in hand, then keeps 3 of the 6 face-up on the table. The rest of the deck is split into two draw piles. One card from each draw pile starts the two discard piles (a Joker is reshuffled back; a 10 destroys its pile right away).</p>
+				<p>You choose the number of players (human or bot), the number of 52-card decks and the number of Jokers before the game starts.</p>
+			</section>
+
+			<section class="panel">
+				<h2>Taking a Turn</h2>
+				<p>There are two discard piles. On your turn you choose one of them and play at least one card on it. Any extra cards you play in the same turn must go on that same pile. Press End turn when you are done.</p>
+				<p>Your hand is topped up to 3 cards after each play while the draw piles last. Face-up cards can only be played once your hand and both draw piles are empty, and face-down cards after that (you play them blind).</p>
+				<p>The first card you play must be equal to or higher than the top card of the pile (Jack 11, Queen 12, King 13, Ace 14). An empty pile accepts anything.</p>
+				<p>After your first card, you can keep stacking on the pile you just played on, as long as each card is the same value as the top card or exactly one higher.</p>
+			</section>
+
+			<section class="panel">
+				<h2>Special Cards</h2>
+				<p><strong>2:</strong> Can be played on anything as your first card, and later only on top of an Ace or another 2.</p>
+				<p><strong>10:</strong> As the first card of your turn it can be played on anything. Any 10 destroys the whole pile it is played on, moving it to the destroyed pile.</p>
+				<p><strong>Joker:</strong> Wild. You choose its value from 2 to 14 when you play it. A Joker in hand before you play can also be spent to evolve an ability. Face-down Jokers count as Aces.</p>
+				<p><strong>Ace:</strong> The highest card. Only an Ace, a 2, a 10 or a Joker can go on top of an Ace.</p>
+			</section>
+
+			<section class="panel">
+				<h2>Picking Up</h2>
+				<p>If you cannot play, or your first card is illegal, you pick up both discard piles and your turn ends. An illegal card after your first play is blocked and ends your turn without picking anything up. A face-down card that turns out to be illegal also makes you pick up both piles.</p>
+			</section>
+
+			<section class="panel">
+				<h2>Characters, Abilities, and Evolutions</h2>
+				<p>Each player has a character with abilities. Some abilities can evolve: spend a Joker from your hand before you play any card and your turn ends, but the ability becomes its evolved version. Evolved abilities keep the base ability's behavior unless stated otherwise.</p>
+				<p>Abilities whose name contains (Domain) are domains and follow Domain Clashing. See the <a href="characters.html" target="_blank" rel="noopener">character descriptions</a>.</p>
+			</section>
+
+			<section class="panel" id="multi-use-rules">
+				<h2>Multi-use Rules</h2>
+				<p>Abilities are built from these reusable rules. Characters can gain them from their abilities, and God of Jujutsu lets its owner use any of them.</p>
+				<article class="track" id="top-card-discard"><h3>Top Card Discard</h3><p>On your turn, remove the top card from one chosen discard pile and move it to the destroyed pile. This rule can be used once per round.</p></article>
+				<article class="track" id="stack-destroy"><h3>Stack Destroy</h3><p>When you play a card with the same value as the top card you played on that pile, destroy the entire pile, including both cards. This rule can trigger multiple times in a round.</p></article>
+				<article class="track" id="i-t"><h3>I-T</h3><p>This player is immune to all effects from other players.</p></article>
+				<article class="track" id="quick-grab"><h3>Quick Grab</h3><p>When another player plays a specific card value, this player can add that card and add it to their own hand.</p></article>
+				<article class="track" id="soul-swap"><h3>Soul Swap</h3><p>Two players swap all their cards, including face-up and face-down cards.</p></article>
+				<article class="track" id="card-swapping"><h3>Card Swapping</h3><p>This player can swap a specific card for another as long as they can see the card.</p></article>
+				<article class="track" id="reveal"><h3>Reveal</h3><p>Every player this is applied to has to reveal one card of their choice that is hidden from other players. This lasts until the card is played.</p></article>
+				<article class="track" id="rescue-draw"><h3>Rescue Draw</h3><p>Once every 2 rounds you can choose to draw 2 cards from the draw pile or if the draw pile is gone you can take 1 card of your choice from the destroyed pile.</p></article>
+				<article class="track" id="full-hand"><h3>Full Hand</h3><p>This player picks up all of their face-up and face-down cards and adds them to their hand.</p></article>
+			</section>
+
+			<section class="panel" id="domain-clashing">
+				<h2>Domain Clashing</h2>
+				<p>Any ability with (Domain) in its name is a domain. If anyone opens a domain, anyone with a domain, even an upgraded one they haven't unlocked, can instantly open theirs to clash. Without the domain unlocked, you can decrease its refinement by 1, expend a Joker from your hand, or exchange one of your upgraded abilities.</p>
+				<ul>
+					<li>Every round that passes while clashing, the refinement of all clashing domains decreases by 1; at 0 the domain breaks.</li>
+					<li>A player who has their turn canceled or picks up the piles has their domain shatter instantly.</li>
+					<li>A domain with greater refinement than an opponent's shatters that opponent's domain at the end of the round.</li>
+					<li>Each turn while clashing you may draw a card: a royal (Jack, Queen, King) blocks the next refinement decrease, a Joker adds 1 refinement, and a 2-5 removes 1 refinement.</li>
+					<li>Domain effects are disabled while domains are clashing.</li>
+					<li>With 3 or more domains open, a player who isn't clashing can expend a Joker to decrease one domain's refinement by 1.</li>
+					<li>A domain stays open until it breaks, shatters, a player picks up the piles or has a turn canceled, or its time limit runs out (usually 3 rounds, set per domain).</li>
+					<li>An "open" domain can't break during a clash, but if an opponent's refinement is higher, their domain's effect still lands.</li>
+				</ul>
+			</section>
+		</main>
+	</body>
+</html>

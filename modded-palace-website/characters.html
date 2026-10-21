@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Palace Characters</title>
+		<link href="https://fonts.googleapis.com/css?family=Lexend" rel="stylesheet">
+		<link rel="stylesheet" href="style.css">
+	</head>
+	<body>
+		<main class="reference-page" id="characters-page">
+			<header class="reference-header">
+				<h1>Palace Characters</h1>
+				<div class="toolbar">
+					<a class="button-link" href="rules.html" target="_blank" rel="noopener">Rules</a>
+					<a class="button-link" href="index.html" target="_blank" rel="noopener">Open game</a>
+				</div>
+			</header>
+			<p class="reference-intro">Choose a character in the game setup. Each character has five abilities; some abilities can evolve by spending a Joker before playing a card.</p>
+
+			<section class="panel character-sheet" id="sukuna" data-character="Sukuna">
+				<h2>Sukuna</h2>
+				<article class="track" id="cleave">
+					<h3>Cleave</h3>
+					<p>This player can use top card discard once per round.</p>
+					<p class="rule-links">Related rule: <a href="rules.html#top-card-discard" target="_blank" rel="noopener">Top Card Discard</a></p>
+					<div class="evolution"><h4>Spider Net Cleave</h4><p>Your top card discard from Cleave gains 5 uses per round and now whenever it causes a pile to lose all of its card the other pile will be destroy for free and you can replace both piles for free forcing them to place 1 card from their hand in each pile.</p></div>
+				</article>
+				<article class="track" id="world-cutting-slash">
+					<h3>World Cutting Slash</h3>
+					<p>Whenever this player plays a King, they can choose a card to delete from the game, then choose another player and increase their Cut Meter by 1. At 9, that player is eliminated and gets last place.</p>
+					<div class="evolution"><h4>Waffle Cutting Slash</h4><p>Whenever this player uses World Cutting Slash, it counts as using it 3 times. This player's Kings can be played on top of any card regardless of when in the turn it is.</p></div>
+				</article>
+				<article class="track" id="enchain">
+					<h3>Enchain</h3>
+					<p>This player can once per game, click this ability to force themselves into soul swapping with another of this player's choice. Then, this player will be forced to play 2 cards in a row, while playing those 2 cards this player will be immune to all other players' effects.</p>
+					<p class="rule-links">Related rule: <a href="rules.html#soul-swap" target="_blank" rel="noopener">Soul Swap</a></p>
+					<div class="evolution"><h4>Rule Workaround</h4><p>Allows the player to soul swap with other players with no restrictions besides those immune to soul swap. During your 2 cards played from soul swapping you can completely ignore card values.</p><p class="rule-links">Related rule: <a href="rules.html#soul-swap" target="_blank" rel="noopener">Soul Swap</a></p></div>
+				</article>
+				<article class="track" id="binding-vow">
+					<h3>Binding Vow</h3>
+					<p>In exchange for passing up a turn, any of your cards can be played as a king.</p>
+					<div class="evolution"><h4>Binding Vow Merchant</h4><p>Any of this player's cards can be stacked on top of a king.</p></div>
+				</article>
+				<article class="track" id="god-of-jujutsu">
+					<h3>God of Jujutsu</h3>
+					<p>This player can once per round use 1 multi use rule of their choice. This player is also completely immune to having other players swap cards with them or use soul swap on them.</p>
+				</article>
+			</section>
+
+			<section class="panel character-sheet" id="gojo" data-character="Gojo">
+				<h2>Gojo</h2>
+				<article class="track" id="hollow-purple">
+					<h3>Hollow Purple</h3>
+					<p>This player gains the ability to stack destroy.</p>
+					<p class="rule-links">Related rule: <a href="rules.html#stack-destroy" target="_blank" rel="noopener">Stack Destroy</a></p>
+					<div class="evolution"><h4>Max Purple</h4><p>When this player plays 3 cards in a row it will activate stack destroy as if they stacked 2 cards in a row.</p></div>
+				</article>
+				<article class="track" id="limitless-barrier">
+					<h3>Limitless Barrier</h3>
+					<p>Whenever this player plays an Ace, they will gain a passive for however many they stacked. For 1 Ace, the player will gain I-T for 2 rounds. For 2 Aces, they will gain all of the previously listed abilities along with being able to pick up one of their face-down cards. For 3 Aces, the player will be able to pick up all of their face-down cards, along with I-T being applied for 3 rounds. Should 4 Aces be played, this player will be able to replace their hand with cards from the deleted pile along with this ability instantly being upgraded.</p>
+					<p class="rule-links">Related rule: <a href="rules.html#i-t" target="_blank" rel="noopener">I-T</a></p>
+					<div class="evolution"><h4>Perfected Limitless</h4><p>When this ability is evolved this player will gain I-T for the rest of the game along with gaining the Quick Grab ability for Aces.</p><p class="rule-links">Related rules: <a href="rules.html#i-t" target="_blank" rel="noopener">I-T</a>, <a href="rules.html#quick-grab" target="_blank" rel="noopener">Quick Grab</a></p></div>
+				</article>
+				<article class="track" id="lapse-blue">
+					<h3>Lapse Blue</h3>
+					<p>Card Swapping with 5's and apply reveal on every other player when swapping cards.</p>
+					<p class="rule-links">Related rules: <a href="rules.html#card-swapping" target="_blank" rel="noopener">Card Swapping</a>, <a href="rules.html#reveal" target="_blank" rel="noopener">Reveal</a></p>
+					<div class="evolution"><h4>Reversal Red</h4><p>The user can use card swapping with the card values of 6 and 9 now along with gaining rescue draw.</p><p class="rule-links">Related rules: <a href="rules.html#card-swapping" target="_blank" rel="noopener">Card Swapping</a>, <a href="rules.html#rescue-draw" target="_blank" rel="noopener">Rescue Draw</a></p></div>
+				</article>
+				<article class="track" id="six-eyes">
+					<h3>Six Eyes</h3>
+					<p>Once per turn, this player can choose to either view one of their face-down cards or see someone else's hand.</p>
+					<div class="evolution"><h4>Mastered Six Eyes</h4><p>This player gains full hand along with being able to check any other player's cards at the start of their turn. Before drawing they are allowed to view the top 3 cards in both draw piles and choose 1 of them to draw.</p><p class="rule-links">Related rule: <a href="rules.html#full-hand" target="_blank" rel="noopener">Full Hand</a></p></div>
+				</article>
+				<article class="track" id="simple-domain">
+					<h3>Simple Domain</h3>
+					<p>This player grants themselves a domain refinement of 3. This player can also 1 time per round discard a card in their hand to remove a negative effect from themselves.</p>
+				</article>
+			</section>
+		</main>
+	</body>
+</html>

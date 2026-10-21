@@ -31,7 +31,7 @@
 			<header>
 				<h1>Palace</h1>
 				<div class="toolbar">
-					<button class="open-rules" type="button">Rules</button>
+					<a class="button-link" href="rules.html" target="_blank" rel="noopener">Rules</a>
 					<button class="open-admin" type="button">Admin</button>
 				</div>
 			</header>
@@ -39,7 +39,8 @@
 				<section>
 					<h2>Your character</h2>
 					<div id="character-list" class="list"></div>
-					<div id="character-details" class="panel"></div>
+					<div id="character-details" class="panel" aria-live="polite"></div>
+					<a class="button-link" href="characters.html" target="_blank" rel="noopener">All character descriptions</a>
 				</section>
 				<section>
 					<h2>Game setup</h2>
@@ -62,7 +63,8 @@
 				<div id="status"></div>
 				<div class="toolbar">
 					<button id="show-log" type="button">Action log</button>
-					<button class="open-rules" type="button">Rules</button>
+					<a class="button-link" href="rules.html" target="_blank" rel="noopener">Rules</a>
+					<a class="button-link" href="characters.html" target="_blank" rel="noopener">Characters</a>
 					<button class="open-admin" type="button">Admin</button>
 					<button id="new-game" type="button">New game</button>
 				</div>
@@ -89,14 +91,6 @@
 					</div>
 				</section>
 			</div>
-		</main>
-
-		<main id="rules-page" hidden>
-			<header>
-				<h1>Palace rules</h1>
-				<div class="toolbar"><button id="rules-back" type="button" class="primary">Back to game</button></div>
-			</header>
-			<div id="rules-content"></div>
 		</main>
 
 		<div id="modal" class="overlay" hidden>

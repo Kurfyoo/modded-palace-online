@@ -28,6 +28,67 @@ main {
 	padding: 16px;
 }
 
+.reference-page {
+	max-width: 1040px;
+}
+
+.reference-page > section + section {
+	margin-top: 12px;
+}
+
+.reference-header {
+	align-items: center;
+	margin-bottom: 16px;
+}
+
+.reference-header h1 {
+	margin: 0;
+}
+
+.reference-intro {
+	max-width: 72ch;
+	line-height: 1.5;
+}
+
+.button-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font: inherit;
+	text-decoration: none;
+	background: var(--cream);
+	color: var(--felt);
+	border-radius: 6px;
+	padding: 8px 14px;
+}
+
+.button-link:hover {
+	background: var(--gold);
+}
+
+.reference-page a:not(.button-link) {
+	color: var(--gold);
+}
+
+.evolution {
+	margin: 10px 0 0 10px;
+	padding: 4px 0 4px 12px;
+	border-left: 2px solid var(--gold);
+}
+
+.evolution h4 {
+	margin: 4px 0;
+}
+
+.evolution p,
+.rule-links {
+	margin: 6px 0;
+}
+
+.rule-links {
+	font-size: 0.9rem;
+}
+
 #game {
 	max-width: 1480px;
 }
@@ -210,9 +271,10 @@ header {
 
 .center-piles {
 	display: grid;
-	grid-template-columns: minmax(54px, 0.7fr) minmax(0, 2fr) minmax(54px, 0.7fr);
+	grid-template-columns: max-content max-content max-content;
+	justify-content: center;
 	align-items: center;
-	gap: 10px;
+	gap: 8px;
 }
 
 #draw-pile-left,
@@ -678,6 +740,16 @@ header {
 
 .dialog input[type=password] {
 	margin: 0 6px 6px 0;
+}
+
+@media (max-width: 620px) {
+	.reference-header {
+		align-items: flex-start;
+	}
+
+	.reference-header .toolbar {
+		flex-wrap: wrap;
+	}
 }
 
 .standings td {

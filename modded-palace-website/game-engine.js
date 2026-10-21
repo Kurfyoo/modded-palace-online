@@ -1,48 +1,36 @@
 "use strict";
 
-(() => {
-	const SUITS = ["Clubs", "Diamonds", "Hearts", "Spades"];
-	const RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace"];
-	const VALUES = Object.fromEntries(RANKS.map((rank, index) => [rank, index + 2]));
-	const MAX_PLAYERS = 12;
-	const DEFAULTS = { players: 6, decks: 3, jokers: 8 };
-	const RANDOM = "Random";
-	const RULES = {
-		"Top card discard": "On your turn, remove the top card from one chosen discard pile and move it to the destroyed pile. This rule can be used once per round.",
-		"Stack destroy": "When you play a card with the same value as the top card you played on that pile, destroy the entire pile, including both cards. This rule can trigger multiple times in a round.",
-		"I-T": "This player is immune to all effects from other players.",
-		"Quick Grab": "When another player plays a specific card value, this player can add that card and add it to their own hand.",
-		"Soul Swap": "Two players swap all their cards, including face-up and face-down cards.",
-		"Card Swapping": "This player can swap a specific card for another as long as they can see the card.",
-		"Reveal": "Every player this is applied to has to reveal one card of their choice that is hidden from other players. This lasts until the card is played.",
-		"Rescue Draw": "Once every 2 rounds you can choose to draw 2 cards from the draw pile or if the draw pile is gone you can take 1 card of your choice from the destroyed pile.",
-		"Full Hand": "This player picks up all of their face-up and face-down cards and adds them to their hand.",
-	};
-	const DOMAIN_RULE = "Domain Clashing: Any ability with (Domain) in its name is a domain. If anyone opens a domain, anyone with a domain, even an upgraded one they haven't unlocked, can instantly open theirs to clash. Without the domain unlocked, you can decrease its refinement by 1, expend a Joker from your hand, or exchange one of your upgraded abilities.\n- Every round that passes while clashing, the refinement of all clashing domains decreases by 1; at 0 the domain breaks.\n- A player who has their turn canceled or picks up the piles has their domain shatter instantly.\n- A domain with greater refinement than an opponent's shatters that opponent's domain at the end of the round.\n- Each turn while clashing you may draw a card: royal (Jack, Queen, King) blocks the next refinement decrease, a Joker adds 1 refinement, and a 2-5 removes 1 refinement.\n- Domain effects are disabled while domains are clashing.\n- With 3 or more domains open, a player who isn't clashing can expend a Joker to decrease one domain's refinement by 1.\n- A domain stays open until it breaks, shatters, a player picks up the piles or has a turn canceled, or its time limit runs out (usually 3 rounds, set per domain).\n- An \"open\" domain can't break during a clash, but if an opponent's refinement is higher, their domain's effect still lands.";
-	const CHARACTERS = {
-		Sukuna: [
-			{ ability: "Cleave", description: "This player can use top card discard once per round.", rules: ["Top card discard"], evolution: { ability: "Spider Net Cleave", description: "Your top card discard from Cleave gains 5 uses per round and now whenever it causes a pile to lose all of its card the other pile will be destroy for free and you can replace both piles for free forcing them to place 1 card from their hand in each pile." } },
-			{ ability: "World Cutting Slash", description: "Whenever this player plays a King, they can choose a card to delete from the game, then choose another player and increase their Cut Meter by 1. At 9, that player is eliminated and gets last place.", evolution: { ability: "Waffle Cutting Slash", description: "Whenever this player uses World Cutting Slash, it counts as using it 3 times. This player's Kings can be played on top of any card regardless of when in the turn it is." } },
-			{ ability: "Enchain", description: "This player can once per game, click this ability to force themselves into soul swapping with another player of this players choice. Then, this player will be forced to play 2 cards in a row, while playing those 2 cards this player will be immune to all other players' effects.", rules: ["Soul Swap"], evolution: { ability: "Rule Workaround", description: "Allows the player to soul swap with other players with no restrictions besides those immune to soul swap. During your 2 cards played from soul swapping you can completely ignore card values.", rules: ["Soul Swap"] } },
-			{ ability: "Binding Vow", description: "In exchange for passing up a turn, any of your cards can be played as a king.", evolution: { ability: "Binding Vow Merchant", description: "Any of this player's cards can be stacked on top of a king." } },
-			{ ability: "God of Jujutsu", description: "This player can once per round use 1 multi use rule of their choice. This player is also completley immune to having other players swap card with them or use soul swap on them." },
-		],
-		Gojo: [
-			{ ability: "Hollow Purple", description: "This player gains the ability to stack destroy", rules: ["Stack destroy"], evolution: { ability: "Max Purple", description: "When this player plays 3 cards in a row it will activate stack destroy as if they stacked 2 cards in a row." } },
-			{ ability: "Limitless Barrier", description: "Whenever this player plays an Ace, they will gain a passive for however many they stacked. For 1 Ace, the player will gain I-T for 2 rounds. For 2 Aces, they will gain all of the previously listed abilities along with being able to pick up one of their face-down cards. For 3 Aces, the player will be able to pick up all of their face-down cards, along with I-T being applied for 3 rounds. Should 4 Aces be played, this player will be able to replace their hand with cards from the deleted pile along with this ability instantly being upgraded.", rules: ["I-T"], evolution: { ability: "Perfected Limitless", description: "When this ability is evolved this player will gain I-T for the rest of the game along with gaining the Quick Grab ability for Aces.", rules: ["I-T", "Quick Grab"] } },
-			{ ability: "Lapse Blue", description: "Card Swapping with 5's and apply reveal on every other player when swapping cards.", rules: ["Card Swapping", "Reveal"], evolution: { ability: "Reversal Red", description: "The user can use card swapping with the card values of 6 and 9 now along with gaining rescue draw.", rules: ["Card Swapping", "Rescue Draw"] } },
-			{ ability: "Six Eyes", description: "Once per turn, this player can choose to either view one of their face-down cards or see someone else's hand.", evolution: { ability: "Mastered Six Eyes", description: "This player gains full hand along with being able to check any other player's cards at the start of their turn. Before drawing they are allowed to view the top 3 cards in both draw piles and choose 1 of them to draw.", rules: ["Full Hand"] } },
-			{ ability: "Simple Domain", description: "This player grants themselves a domain refinement of 3. This player can also 1 time per round discard a card in their hand to remove a negative effect from themselves." },
-		],
-	};
-	const characterCatalog = Object.entries(CHARACTERS).map(([name, tracks]) => ({
-		name,
-		tracks: tracks.map((track) => ({
-			...track,
-			rules: track.rules || [],
-			evolution: track.evolution ? { ...track.evolution, rules: track.evolution.rules || [] } : undefined,
-		})),
-	}));
+	(() => {
+		const SUITS = ["Clubs", "Diamonds", "Hearts", "Spades"];
+		const RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace"];
+		const VALUES = Object.fromEntries(RANKS.map((rank, index) => [rank, index + 2]));
+		const MAX_PLAYERS = 12;
+		const DEFAULTS = { players: 6, decks: 3, jokers: 8 };
+		const RANDOM = "Random";
+		const CHARACTERS = {
+			Sukuna: [
+				{ ability: "Cleave", rules: ["Top card discard"], evolution: { ability: "Spider Net Cleave" } },
+				{ ability: "World Cutting Slash", evolution: { ability: "Waffle Cutting Slash" } },
+				{ ability: "Enchain", rules: ["Soul Swap"], evolution: { ability: "Rule Workaround", rules: ["Soul Swap"] } },
+				{ ability: "Binding Vow", evolution: { ability: "Binding Vow Merchant" } },
+				{ ability: "God of Jujutsu" },
+			],
+			Gojo: [
+				{ ability: "Hollow Purple", rules: ["Stack destroy"], evolution: { ability: "Max Purple" } },
+				{ ability: "Limitless Barrier", rules: ["I-T"], evolution: { ability: "Perfected Limitless", rules: ["I-T", "Quick Grab"] } },
+				{ ability: "Lapse Blue", rules: ["Card Swapping", "Reveal"], evolution: { ability: "Reversal Red", rules: ["Card Swapping", "Rescue Draw"] } },
+				{ ability: "Six Eyes", evolution: { ability: "Mastered Six Eyes", rules: ["Full Hand"] } },
+				{ ability: "Simple Domain" },
+			],
+		};
+		const characterCatalog = Object.entries(CHARACTERS).map(([name, tracks]) => ({
+			name,
+			tracks: tracks.map((track) => ({
+				ability: track.ability,
+				rules: track.rules || [],
+				evolution: track.evolution ? { ability: track.evolution.ability, rules: track.evolution.rules || [] } : undefined,
+			})),
+		}));
 
 	const rankValue = (card, jokerValue = null) => card.rank === "Joker" ? (jokerValue || 14) : VALUES[card.rank];
 	const cardText = (card) => card.rank === "Joker" ? "Joker" : `${card.rank} of ${card.suit}`;
@@ -411,7 +399,7 @@
 		}
 		you(index) { return this.hotSeat() ? this.game.players[index].name : "You"; }
 		get_catalog() {
-			return JSON.stringify({ characters: characterCatalog, rules: RULES, domain_rule: DOMAIN_RULE, max_players: MAX_PLAYERS, defaults: DEFAULTS, random: RANDOM });
+			return JSON.stringify({ characters: characterCatalog, max_players: MAX_PLAYERS, defaults: DEFAULTS, random: RANDOM });
 		}
 		new_game(settingsText) {
 			const settings = JSON.parse(settingsText);
