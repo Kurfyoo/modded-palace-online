@@ -549,7 +549,7 @@ function renderHand() {
 		return hiddenNode(index, card.known, options);
 	});
 	cards.append(el("div", { class: "own-card-zones" },
-		playerZone(null, me.hand.length, handCards),
+		playerZone("Hand", me.hand.length, handCards),
 		playerZone("Face-Up", me.face_up.length, faceUpCards),
 		playerZone("Face-Down", me.face_down.length, faceDownCards)));
 
