@@ -6,6 +6,18 @@
 		<title>Modded Palace Online</title>
 		<link href='https://fonts.googleapis.com/css?family=Lexend' rel='stylesheet'>
 		<link rel="stylesheet" type="text/css" href="style.css">
+		<script>
+			window.addEventListener("error", (event) => {
+				const loading = document.getElementById("loading");
+				const message = document.getElementById("loading-text");
+				if (!loading || loading.hidden || !message) return;
+				if (event.target && event.target.tagName === "SCRIPT") {
+					message.textContent = "Could not load " + event.target.src.split("/").pop() + ".";
+				} else {
+					message.textContent = "Could not start: " + (event.message || "JavaScript error");
+				}
+			}, true);
+		</script>
 		<script src="game-engine.js" defer></script>
 		<script src="script.js" defer></script>
 	</head>

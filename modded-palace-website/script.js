@@ -406,23 +406,46 @@ function needsHandoff() {
 
 // ---------------------------------------------------------------- rendering
 
+function cardFromLabel(label) {
+	const joker = label.match(/^Joker(?: \((.*?)\))?$/);
+	if (joker) return { rank: "Joker", suit: "", label, value: joker[1] };
+	const match = label.match(/^(.*?) of (Clubs|Diamonds|Hearts|Spades)$/);
+	return match ? { rank: match[1], suit: match[2], label } : { rank: label, suit: "", label };
+}
+
 function cardNode(card, options = {}) {
 	const red = card.suit === "Hearts" || card.suit === "Diamonds";
 	const classes = ["card"];
 	if (red) classes.push("red");
 	if (card.rank === "Joker") classes.push("joker");
 	if (options.selected) classes.push("selected");
-	const text = card.rank === "Joker" ? "Joker" : (RANK_SHORT[card.rank] || card.rank) + " " + SUIT_SYMBOLS[card.suit];
-	const node = el("button", { class: classes.join(" "), onclick: options.onclick, title: card.label }, text);
+	if (options.compact) classes.push("compact");
+	const node = el(options.onclick ? "button" : "div", {
+		class: classes.join(" "),
+		...(options.onclick ? { type: "button", onclick: options.onclick } : {}),
+		title: card.label,
+		ariaLabel: card.label,
+	},
+	el("span", { class: "card-rank" }, RANK_SHORT[card.rank] || card.rank),
+	el("span", { class: "card-suit" }, card.rank === "Joker" ? "★" : SUIT_SYMBOLS[card.suit] || ""),
+	card.value ? el("small", { class: "card-value" }, card.value) : "");
 	if (options.disabled) node.disabled = true;
 	return node;
 }
 
 function hiddenNode(index, known, options) {
-	const node = el("button", { class: "card hidden" + (options.selected ? " selected" : ""), onclick: options.onclick },
-		"Face-down " + (index + 1));
+	const node = el(options.onclick ? "button" : "div", {
+		class: "card hidden" + (options.selected ? " selected" : "") + (options.compact ? " compact" : ""),
+		...(options.onclick ? { type: "button", onclick: options.onclick } : {}),
+		ariaLabel: "Face-down card " + (index + 1),
+	}, el("span", { class: "card-back-mark", ariaHidden: true }, "✦"));
 	if (known) node.append(el("small", {}, "Seen: " + known));
 	return node;
+}
+
+function cardGallery(labels) {
+	if (!labels.length) return el("p", { class: "empty-pile" }, "Empty");
+	return el("div", { class: "card-gallery" }, ...labels.map((label) => cardNode(cardFromLabel(label), { compact: true })));
 }
 
 function render() {
@@ -469,47 +492,66 @@ function renderPiles() {
 	const box = $("piles");
 	box.replaceChildren();
 	st.draw_piles.forEach((count, index) => {
-		box.append(el("div", { class: "draw" }, `DRAW PILE ${index + 1}`, el("br"), "Cards hidden", el("br"), `${count} cards`));
+		box.append(el("div", { class: "pile-stack draw-pile" },
+			hiddenNode(index, null, { compact: true }),
+			el("div", { class: "pile-copy" }, el("strong", {}, `Draw pile ${index + 1}`), el("small", {}, `${count} cards`))));
 	});
 	[["Destroyed pile", st.destroyed], ["Deleted pile", st.deleted]].forEach(([title, cards]) => {
-		box.append(el("div", { class: "pile" }, el("button", {
-			onclick: () => showDialog(title, el("pre", {}, cards.join("\n") || "Empty"), [{ label: "Close" }]),
-		}, `${title} (${cards.length})`)));
+		box.append(el("button", {
+			class: "pile-stack collection-pile",
+			type: "button",
+			ariaLabel: `${title}, ${cards.length} cards. View pile.`,
+			onclick: () => showDialog(title, cardGallery(cards), [{ label: "Close" }]),
+		},
+		cards.length ? cardNode(cardFromLabel(cards.at(-1)), { compact: true }) : el("div", { class: "empty-card" }),
+		el("div", { class: "pile-copy" }, el("strong", {}, title), el("small", {}, `${cards.length} cards`))));
 	});
 	st.discards.forEach((pile, index) => {
 		const canPick = st.phase === "play" && st.me.is_current;
-		const node = el("div", { class: "pile discard" + (selPile === index ? " selected" : ""), onclick: () => {
+		const node = el("div", { class: "pile-stack discard-pile" + (selPile === index ? " selected" : "") });
+		const select = el("button", { class: "discard-select", type: "button", disabled: !canPick, ariaLabel: `Select discard pile ${index + 1}${pile.top ? `, ${pile.top}` : ", empty"}`, onclick: () => {
 			if (canPick) {
 				selPile = index;
 				render();
 			}
 		} },
-		`DISCARD ${index + 1}`, el("small", {}, pile.top || "Empty"), el("small", {}, `${pile.count} cards`));
+		pile.top ? cardNode(cardFromLabel(pile.top), { compact: true }) : el("div", { class: "empty-card" }));
+		node.append(select, el("div", { class: "pile-copy" }, el("strong", {}, `Discard pile ${index + 1}`), el("small", {}, `${pile.count} cards`)));
 		const viewButton = el("button", { onclick: (event) => {
 			event.stopPropagation();
-			showDialog(`Discard pile ${index + 1}`, el("pre", {}, pile.cards.join("\n") || "Empty"), [{ label: "Close" }]);
-		} }, "View all cards");
+			showDialog(`Discard pile ${index + 1}`, cardGallery(pile.cards), [{ label: "Close" }]);
+		} }, "View pile");
 		node.append(viewButton);
 		box.append(node);
 	});
+}
+
+function playerZone(title, count, cards) {
+	return el("div", { class: "player-zone" },
+		el("span", { class: "zone-label" }, `${title} · ${count}`),
+		el("div", { class: "mini-cards" }, ...cards));
 }
 
 function renderPlayers() {
 	const box = $("players");
 	box.replaceChildren();
 	state.players.forEach((player) => {
-		const lines = [
-			el("strong", {}, player.name + (player.character ? ` (${player.character})` : "") + (player.current ? " - current turn" : "")),
-			el("br"),
-			`Hand: ${player.hand} | Face-down: ${player.face_down}`,
-			el("br"),
-			"Face-up: " + (player.face_up.map((card) => card.label).join(", ") || "none"),
+		const handBacks = Array.from({ length: Math.min(player.hand, 6) }, (_, index) => hiddenNode(index, null, { compact: true }));
+		const faceDownBacks = Array.from({ length: Math.min(player.face_down, 3) }, (_, index) => hiddenNode(index, null, { compact: true }));
+		const zones = [
+			playerZone("Hand", player.hand, handBacks),
+			playerZone("Face-up", player.face_up.length, player.face_up.map((card) => cardNode(card, { compact: true }))),
+			playerZone("Face-down", player.face_down, faceDownBacks),
 		];
-		if (player.revealed.length) lines.push(el("br"), "Revealed: " + player.revealed.join(", "));
-		if (player.seen.length) lines.push(el("br"), "Seen (Six Eyes): " + player.seen.join(", "));
-		const node = el("div", { class: "player" + (player.current ? " current" : "") }, ...lines);
+		if (player.revealed.length) zones.push(playerZone("Revealed", player.revealed.length, player.revealed.map((label) => cardNode(cardFromLabel(label), { compact: true }))));
+		if (player.seen.length) zones.push(playerZone("Seen", player.seen.length, player.seen.map((label) => cardNode(cardFromLabel(label), { compact: true }))));
+		const node = el("div", { class: "player" + (player.current ? " current" : "") },
+			el("strong", { class: "player-name" }, player.name),
+			player.character ? el("span", { class: "player-character" }, player.character) : "",
+			player.current ? el("span", { class: "current-turn" }, "Turn") : "",
+			el("div", { class: "player-zones" }, zones));
 		if (player.tags.length) {
-			node.append(el("br"), ...player.tags.map((tag) => el("span", { class: "tag" }, tag)));
+			node.append(el("div", { class: "player-tags" }, ...player.tags.map((tag) => el("span", { class: "tag" }, tag))));
 		}
 		box.append(node);
 	});
@@ -582,12 +624,17 @@ function renderHand() {
 	}
 
 	if (st.draw_choice) {
-		draw.append(el("div", {}, "Mastered Six Eyes: choose 1 of the top 3 cards of each draw pile to draw."));
-		st.draw_choice.forEach((choice) => {
-			draw.append(el("button", {
-				onclick: () => send({ type: "draw_pref", pile: choice.pile, depth: choice.depth }),
-			}, `${choice.label} (pile ${choice.pile + 1}, #${choice.depth + 1})`));
-		});
+		draw.append(el("p", { class: "draw-prompt" }, "Mastered Six Eyes: choose a card to draw."));
+		for (let pileIndex = 0; pileIndex < st.draw_piles.length; pileIndex++) {
+			const choices = st.draw_choice.filter((choice) => choice.pile === pileIndex);
+			if (!choices.length) continue;
+			draw.append(el("div", { class: "draw-choice-group" },
+				el("strong", {}, `Pile ${pileIndex + 1}`),
+				...choices.map((choice) => cardNode(cardFromLabel(choice.label), {
+					compact: true,
+					onclick: () => send({ type: "draw_pref", pile: choice.pile, depth: choice.depth }),
+				}))));
+		}
 	}
 
 	if (st.all_humans_finished) {
