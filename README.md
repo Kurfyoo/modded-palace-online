@@ -9,4 +9,5 @@ Play as your favorite characters in a modified version of the hit playing card g
     - Servers, databases, and online features yet to be implemented
 - The browser game is implemented in JavaScript and runs without Python or Pyodide.
 - To play locally, serve `modded-palace-website/` as static files and open `index.html` in a browser.
+- The game page includes rules, character sheets, and the action log as same-page fragment views (`#rules`, `#characters`, and `#action-log`).
 - Run the engine checks with `node --test modded-palace-website/game-engine.test.js`.

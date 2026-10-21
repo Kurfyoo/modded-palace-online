@@ -739,7 +739,7 @@
 				const picked = [];
 				for (let n = 0; n < 2; n++) {
 					const options = available.filter((row) => !picked.includes(row));
-					const choice = options[this.ask(`Spider Net Cleave: choose a card for discard pile ${n + 1}`, options.map((row) => `${row.zone.replace("_", " ")}: ${row.zone === "face_down" ? "Face-down card" : cardText(row.c)}`), answers)];
+					const choice = options[this.ask(`Spider Net Cleave: choose a card for discard pile ${n + 1}`, options.map((row) => `${row.zone.replace("_", " ")}: ${row.zone === "face_down" ? "Face-Down card" : cardText(row.c)}`), answers)];
 					const jokerValue = choice.c.rank === "Joker" ? this.ask(`Joker value for discard pile ${n + 1}`, RANKS, answers) + 2 : null;
 					picked.push(choice);
 					choice.jokerValue = jokerValue;
@@ -801,7 +801,7 @@
 			if (p.bot || !ability || p.six_eyes_turn === g.turn) return;
 			const choice = this.ask("Six Eyes", ["View one of your face-down cards", "See another player's hand"], answers);
 			if (choice === 0 && p.face_down.length) {
-				const cardIndex = this.ask("Choose a face-down card", p.face_down.map((_, n) => `Face-down card ${n + 1}`), answers);
+				const cardIndex = this.ask("Choose a face-down card", p.face_down.map((_, n) => `Face-Down card ${n + 1}`), answers);
 				g.remember(i, p.face_down[cardIndex], i);
 				this.notice = `Six Eyes saw ${cardText(p.face_down[cardIndex])}.`;
 			} else {
@@ -1063,7 +1063,7 @@
 			if (!p.pending_limitless_effects.length) return;
 			const effect = p.pending_limitless_effects[0];
 			if (effect === "pick_one_face_down" && p.face_down.length) {
-				const index = this.ask("Limitless Barrier: choose one face-down card to pick up", p.face_down.map((_, n) => `Face-down card ${n + 1}`), answers);
+				const index = this.ask("Limitless Barrier: choose one face-down card to pick up", p.face_down.map((_, n) => `Face-Down card ${n + 1}`), answers);
 				p.hand.push(p.face_down.splice(index, 1)[0]);
 				this.notice = `Limitless Barrier picked up a face-down card.`;
 			} else if (effect === "pick_all_face_down") {

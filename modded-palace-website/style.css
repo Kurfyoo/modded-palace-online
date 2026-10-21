@@ -95,6 +95,13 @@ main {
 	font-size: 0.9rem;
 }
 
+#action-log-content {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	font: inherit;
+	margin: 0;
+}
+
 #game {
 	max-width: 1480px;
 }
@@ -233,7 +240,6 @@ header {
 	display: grid;
 	grid-template-columns: minmax(150px, 0.8fr) minmax(400px, 2.4fr) minmax(150px, 0.8fr);
 	grid-template-areas:
-		"top top top"
 		"left center right"
 		"hand hand hand";
 	align-items: stretch;
@@ -242,10 +248,14 @@ header {
 }
 
 .top-piles {
-	grid-area: top;
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	right: 8px;
 	display: flex;
-	justify-content: center;
+	justify-content: space-between;
 	gap: 10px;
+	pointer-events: none;
 }
 
 #left-players {
@@ -264,6 +274,7 @@ header {
 
 #center-table {
 	grid-area: center;
+	position: relative;
 	min-width: 0;
 	min-height: 270px;
 	display: grid;
@@ -273,6 +284,19 @@ header {
 	border-radius: 20px;
 	background: #214239;
 	box-shadow: inset 0 0 0 2px rgba(244, 237, 220, 0.08);
+}
+
+#play-prompt {
+	position: absolute;
+	top: 8px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: max-content;
+	max-width: calc(100% - 280px);
+	margin: 0;
+	text-align: center;
+	pointer-events: none;
+	z-index: 1;
 }
 
 .center-piles {
@@ -327,8 +351,12 @@ header {
 }
 
 .collection-pile {
-	width: 100%;
+	width: 132px;
+	flex: 0 0 132px;
 	color: var(--cream);
+	padding-left: 4px;
+	padding-right: 4px;
+	pointer-events: auto;
 }
 
 .discard-pile.selected {
@@ -340,22 +368,14 @@ header {
 	width: 132px;
 	padding-left: 4px;
 	padding-right: 4px;
+	cursor: pointer;
 }
 
 .discard-select {
-	width: auto;
-	padding: 0;
-	background: transparent;
+	display: flex;
+	justify-content: center;
+	width: 100%;
 	line-height: 0;
-}
-
-.discard-select:hover:enabled {
-	background: transparent;
-	transform: translateY(-2px);
-}
-
-.discard-select:disabled {
-	opacity: 1;
 }
 
 .pile-view {
@@ -787,7 +807,6 @@ header {
 	.table-layout {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		grid-template-areas:
-			"top top"
 			"center center"
 			"left right"
 			"hand hand";

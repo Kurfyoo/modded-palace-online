@@ -35,9 +35,29 @@ test("catalog keeps gameplay metadata without embedding page descriptions", () =
 	assert.equal(Object.hasOwn(catalog, "rules"), false);
 	assert.equal(Object.hasOwn(catalog, "domain_rule"), false);
 	const indexHtml = fs.readFileSync(new URL("./index.html", `file://${__filename}`), "utf8");
+	const scriptJs = fs.readFileSync(new URL("./script.js", `file://${__filename}`), "utf8");
 	const charactersHtml = fs.readFileSync(new URL("./characters.html", `file://${__filename}`), "utf8");
 	const rulesHtml = fs.readFileSync(new URL("./rules.html", `file://${__filename}`), "utf8");
 	assert.match(indexHtml, /id="character-details"/);
+	assert.match(indexHtml, /id="play-prompt"/);
+	assert.match(scriptJs, /Click pile again to play selected card\./);
+	assert.doesNotMatch(scriptJs, /Play selected card/);
+	assert.match(indexHtml, /<section id="center-table"[^>]*>[\s\S]*?<section id="top-piles"/);
+	assert.match(indexHtml, /id="rules"/);
+	assert.match(indexHtml, /id="characters"/);
+	assert.match(indexHtml, /id="action-log"/);
+	assert.match(indexHtml, /href="#rules">Rules<\/a>/);
+	assert.match(indexHtml, /href="#characters">Characters<\/a>/);
+	assert.match(indexHtml, /href="#action-log">Action Log<\/a>/);
+	assert.match(indexHtml, /<main id="setup" hidden>[\s\S]*?<header>[\s\S]*?<a class="button-link" href="#characters">Characters<\/a>[\s\S]*?<\/header>/);
+	assert.match(indexHtml, /<main class="reference-page" id="rules" hidden>[\s\S]*?<a class="button-link" href="#characters">Characters<\/a>[\s\S]*?<a class="button-link" href="#action-log">Action Log<\/a>/);
+	assert.match(indexHtml, /<main class="reference-page" id="characters" hidden>[\s\S]*?<a class="button-link" href="#rules">Rules<\/a>[\s\S]*?<a class="button-link" href="#action-log">Action Log<\/a>/);
+	assert.match(indexHtml, /<main class="reference-page" id="action-log" hidden>[\s\S]*?<a class="button-link" href="#rules">Rules<\/a>[\s\S]*?<a class="button-link" href="#characters">Characters<\/a>/);
+	assert.deepEqual([...indexHtml.matchAll(/class="panel character-sheet" id="([^"]+)"/g)].map((match) => match[1]), ["sukuna", "gojo"]);
+	const indexIds = new Set([...indexHtml.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]));
+	for (const [, fragment] of indexHtml.matchAll(/href="#([^"]+)"/g)) {
+		assert.ok(indexIds.has(fragment), `missing fragment target: #${fragment}`);
+	}
 	assert.deepEqual([...charactersHtml.matchAll(/data-character="([^"]+)"/g)].map((match) => match[1]), ["Sukuna", "Gojo"]);
 	assert.match(charactersHtml, /Spider Net Cleave/);
 	assert.match(rulesHtml, /Domain Clashing/);

@@ -10,6 +10,7 @@ let characterDescriptions = null;
 let state = null;
 let selCard = null;
 let selPile = null;
+let playConfirmReady = false;
 let setupSel = new Set();
 let confirmedViewer = null;
 let fastForward = false;
@@ -17,6 +18,7 @@ let botTimer = null;
 let busy = false;
 let adminOpen = false;
 let playerRows = [];
+let appPage = "setup";
 
 const $ = (id) => document.getElementById(id);
 
@@ -42,8 +44,8 @@ function boot() {
 	selectedCharacter = catalog.characters[0].name;
 	$("loading").hidden = true;
 	buildSetup();
-	$("setup").hidden = false;
 	loadCharacterDescriptions();
+	renderPage();
 }
 
 try {
@@ -54,19 +56,29 @@ try {
 
 // ---------------------------------------------------------------- setup screen
 
-async function loadCharacterDescriptions() {
-	try {
-		const response = await fetch("characters.html");
-		if (!response.ok) throw new Error("Could not load character descriptions.");
-		const page = new DOMParser().parseFromString(await response.text(), "text/html");
-		const sheets = [...page.querySelectorAll(".character-sheet[data-character]")];
-		characterDescriptions = new Map(sheets.map((sheet) => [sheet.dataset.character, sheet]));
-		renderCharacterDetails();
-	} catch {
-		$("character-details").replaceChildren(el("p", {},
-			"Character descriptions could not be loaded. ",
-			el("a", { href: "characters.html", target: "_blank", rel: "noopener" }, "Open all character descriptions.")));
-	}
+function loadCharacterDescriptions() {
+	const sheets = [...document.querySelectorAll(".character-sheet[data-character]")];
+	characterDescriptions = new Map(sheets.map((sheet) => [sheet.dataset.character, sheet]));
+	renderCharacterDetails();
+}
+
+function renderPage() {
+	const target = $(location.hash.slice(1));
+	const page = target?.closest("main") || $(appPage);
+	document.querySelectorAll("body > main").forEach((main) => {
+		main.hidden = main !== page;
+	});
+	document.querySelectorAll("[data-return]").forEach((link) => {
+		link.href = `#${appPage}`;
+	});
+	if (page?.id === "action-log") updateActionLog();
+	if (target && target !== page) target.scrollIntoView();
+}
+
+function setAppPage(page) {
+	appPage = page;
+	history.replaceState(null, "", `#${page}`);
+	renderPage();
 }
 
 function renderCharacterDetails() {
@@ -140,12 +152,12 @@ $("start").addEventListener("click", () => {
 		$("setup-error").textContent = result.error;
 		return;
 	}
-	$("setup").hidden = true;
-	$("game").hidden = false;
 	confirmedViewer = null;
 	fastForward = false;
 	selCard = selPile = null;
+	playConfirmReady = false;
 	setupSel = new Set();
+	setAppPage("game");
 	applyState(result);
 });
 
@@ -154,8 +166,9 @@ $("new-game").addEventListener("click", () => {
 	clearTimeout(botTimer);
 	botTimer = null;
 	state = null;
-	$("game").hidden = true;
-	$("setup").hidden = false;
+	selCard = selPile = null;
+	playConfirmReady = false;
+	setAppPage("setup");
 });
 
 // ---------------------------------------------------------------- dialogs
@@ -189,9 +202,11 @@ function showAsk(ask, answers, action) {
 	showDialog(ask.title, el("p", {}), buttons);
 }
 
-$("show-log").addEventListener("click", () => {
-	if (state) showDialog("Action log", el("pre", {}, state.log.join("\n")), [{ label: "Close" }]);
-});
+function updateActionLog() {
+	$("action-log-content").textContent = state ? state.log.join("\n") : "No game has started.";
+}
+
+window.addEventListener("hashchange", renderPage);
 
 // ---------------------------------------------------------------- admin menu
 
@@ -273,6 +288,8 @@ function send(action, answers = []) {
 		return;
 	}
 	selCard = null;
+	playConfirmReady = false;
+	if (action.type === "play" || action.type === "end_turn") selPile = null;
 	applyState(result);
 }
 
@@ -291,6 +308,7 @@ function scheduleBot() {
 function applyState(next) {
 	state = next;
 	if (state.phase === "over") fastForward = false;
+	if (location.hash === "#action-log") updateActionLog();
 	render();
 	if (state.popup) showDialog("Six Eyes", el("p", {}, state.popup), [{ label: "OK" }]);
 	scheduleBot();
@@ -342,7 +360,7 @@ function hiddenNode(index, known, options) {
 	const node = el(options.onclick ? "button" : "div", {
 		class: "card hidden" + (options.selected ? " selected" : "") + (options.compact ? " compact" : ""),
 		...(options.onclick ? { type: "button", onclick: options.onclick } : {}),
-		ariaLabel: "Face-down card " + (index + 1),
+		ariaLabel: "Face-Down card " + (index + 1),
 	}, el("span", { class: "card-back-mark", ariaHidden: true }, "✦"));
 	if (known) node.append(el("small", {}, "Seen: " + known));
 	return node;
@@ -423,14 +441,31 @@ function renderPiles() {
 	});
 	st.discards.forEach((pile, index) => {
 		const canPick = st.phase === "play" && st.me.is_current;
-		const node = el("div", { class: "pile-stack discard-pile" + (selPile === index ? " selected" : "") });
-		node.append(el("strong", { class: "pile-label" }, `Discard Pile ${index + 1}`));
-		const select = el("button", { class: "discard-select", type: "button", disabled: !canPick, ariaLabel: `Select discard pile ${index + 1}${pile.top ? `, ${pile.top}` : ", empty"}`, onclick: () => {
-			if (canPick) {
-				selPile = index;
-				render();
+		const choosePile = () => {
+			if (!canPick) return;
+			if (selCard !== null && selPile === index && playConfirmReady) {
+				send({ type: "play", card: selCard, pile: index });
+				return;
 			}
-		} },
+			selPile = index;
+			playConfirmReady = selCard !== null;
+			render();
+		};
+		const node = el("div", {
+			class: "pile-stack discard-pile" + (selPile === index ? " selected" : ""),
+			role: "button",
+			tabIndex: canPick ? 0 : -1,
+			ariaLabel: `Select discard pile ${index + 1}${pile.top ? `, ${pile.top}` : ", empty"}`,
+			onclick: choosePile,
+			onkeydown: (event) => {
+				if (event.key === "Enter" || event.key === " ") {
+					event.preventDefault();
+					choosePile();
+				}
+			},
+		});
+		node.append(el("strong", { class: "pile-label" }, `Discard Pile ${index + 1}`));
+		const select = el("div", { class: "discard-select" },
 		pile.top ? cardNode(cardFromLabel(pile.top), { compact: true }) : el("div", { class: "empty-card" }));
 		node.append(select, el("small", { class: "pile-count" }, `${pile.count} cards`));
 		const viewButton = el("button", { onclick: (event) => {
@@ -440,6 +475,16 @@ function renderPiles() {
 		node.append(viewButton);
 		discards.append(node);
 	});
+	const canPrompt = st.phase === "play" && st.me.is_current && !st.me.pending && !st.draw_choice && st.me.mode !== "reveal";
+	$("play-prompt").textContent = !canPrompt ? ""
+		: selCard !== null && selPile !== null ? "Click pile again to play selected card."
+		: [selCard === null ? "Select a card" : "", selPile === null ? "Select a pile" : ""].filter(Boolean).join(" | ");
+}
+
+function selectPlayCard(index) {
+	selCard = index;
+	playConfirmReady = selPile !== null;
+	render();
 }
 
 function playerZone(title, count, cards) {
@@ -463,8 +508,8 @@ function renderPlayers() {
 		faceDownCards.push(...Array.from({ length: Math.min(Math.max(0, player.face_down - player.seen.length), 3) }, (_, index) => hiddenNode(index, null, { compact: true })));
 		const zones = [
 			playerZone("Hand", player.hand, handBacks),
-			playerZone("Face-up", player.face_up.length, player.face_up.map((card) => cardNode(card, { compact: true }))),
-			playerZone(player.seen.length ? "Face-down / seen" : "Face-down", player.face_down, faceDownCards),
+			playerZone("Face-Up", player.face_up.length, player.face_up.map((card) => cardNode(card, { compact: true }))),
+			playerZone(player.seen.length ? "Face-Down / seen" : "Face-Down", player.face_down, faceDownCards),
 		];
 		const node = el("div", { class: "player" + (player.current ? " current" : "") },
 			el("strong", { class: "player-name" }, player.name),
@@ -500,7 +545,7 @@ function renderHand() {
 	}
 
 	if (st.phase === "setup") {
-		$("hand-title").textContent = `CHOOSE 3 FACE-UP CARDS | ${setupSel.size}/3 SELECTED`;
+		$("hand-title").textContent = `Choose Face-Ups | ${setupSel.size}/3`;
 		st.me.hand.forEach((card, index) => {
 			cards.append(cardNode(card, {
 				selected: setupSel.has(index),
@@ -535,17 +580,17 @@ function renderHand() {
 	}
 	const handCards = me.hand.map((card, index) => {
 		const active = me.is_current && (revealing || source === "hand");
-		const options = active ? { selected: !revealing && selCard === index, onclick: () => revealing ? send({ type: "reveal", card: index }) : (selCard = index, render()) } : {};
+		const options = active ? { selected: !revealing && selCard === index, onclick: () => revealing ? send({ type: "reveal", card: index }) : selectPlayCard(index) } : {};
 		return cardNode(card, options);
 	});
 	const faceUpCards = me.face_up.map((card, index) => {
 		const active = me.is_current && !revealing && source === "face_up";
-		const options = active ? { selected: selCard === index, onclick: () => { selCard = index; render(); } } : {};
+		const options = active ? { selected: selCard === index, onclick: () => selectPlayCard(index) } : {};
 		return cardNode(card, options);
 	});
 	const faceDownCards = me.face_down.map((card, index) => {
 		const active = me.is_current && !revealing && source === "face_down";
-		const options = active ? { selected: selCard === index, onclick: () => { selCard = index; render(); } } : {};
+		const options = active ? { selected: selCard === index, onclick: () => selectPlayCard(index) } : {};
 		return hiddenNode(index, card.known, options);
 	});
 	cards.append(el("div", { class: "own-card-zones" },
@@ -572,15 +617,7 @@ function renderHand() {
 		return;
 	}
 	if (me.is_current && !revealing) {
-		const canPlay = source && selCard !== null && selPile !== null && !me.pending && !st.draw_choice;
-		actions.append(
-			el("button", {
-				class: "primary",
-				disabled: !canPlay,
-				onclick: () => send({ type: "play", card: selCard, pile: selPile }),
-			}, source === "face_down" ? "Reveal and play" : "Play selected card"),
-			el("button", { disabled: !me.can_end, onclick: () => send({ type: "end_turn" }) }, "End turn"),
-		);
+		actions.append(el("button", { disabled: !me.can_end, onclick: () => send({ type: "end_turn" }) }, "End turn"));
 	}
 	if (revealing) return;
 	st.buttons.forEach((button) => {
