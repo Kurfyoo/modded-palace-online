@@ -19,7 +19,6 @@ let adminOpen = false;
 let playerRows = [];
 
 const $ = (id) => document.getElementById(id);
-const CHARACTER_PACK_STORAGE_KEY = "modded-palace.character-pack.v1";
 
 function el(tag, props = {}, ...children) {
 	const node = document.createElement(tag);
@@ -39,11 +38,6 @@ function el(tag, props = {}, ...children) {
 function boot() {
 	bridge = window.PalaceBridge;
 	if (!bridge) throw new Error("The game engine could not be loaded.");
-	const savedCharacters = localStorage.getItem(CHARACTER_PACK_STORAGE_KEY);
-	if (savedCharacters) {
-		const result = JSON.parse(bridge.import_characters(savedCharacters));
-		if (result.error) throw new Error(`Saved character import failed: ${result.error}`);
-	}
 	catalog = JSON.parse(bridge.get_catalog());
 	selectedCharacter = catalog.characters[0].name;
 	$("loading").hidden = true;
@@ -78,60 +72,11 @@ async function loadCharacterDescriptions() {
 function renderCharacterDetails() {
 	const box = $("character-details");
 	const sheet = characterDescriptions?.get(selectedCharacter);
-	const character = catalog.characters.find((entry) => entry.name === selectedCharacter);
-	if (sheet) {
-		box.replaceChildren(...[...sheet.children].slice(1).map((node) => node.cloneNode(true)));
-		return;
-	}
-	if (character?.imported) {
-		box.replaceChildren(...character.tracks.map((track) => {
-			const section = el("article", { class: "track" }, el("h3", {}, track.ability));
-			if (track.description) section.append(el("p", {}, track.description));
-			if (track.relatedRules?.length) section.append(el("p", { class: "rule-links" }, `Related rules: ${track.relatedRules.join(", ")}`));
-			if (track.evolution) {
-				const evolution = el("div", { class: "evolution" }, el("h4", {}, track.evolution.ability));
-				if (track.evolution.description) evolution.append(el("p", {}, track.evolution.description));
-				if (track.evolution.relatedRules?.length) evolution.append(el("p", { class: "rule-links" }, `Related rules: ${track.evolution.relatedRules.join(", ")}`));
-				section.append(evolution);
-			}
-			return section;
-		}));
-		return;
-	}
-	if (!character || !character.imported) {
+	if (!sheet) {
 		box.replaceChildren(el("p", { class: "hint" }, "Loading character descriptions..."));
 		return;
 	}
-	box.replaceChildren(el("p", { class: "hint" }, "No descriptions were imported for this character."));
-}
-
-function characterSheetContent(name) {
-	const sheet = characterDescriptions?.get(name);
-	if (sheet) return el("div", {}, ...[...sheet.children].slice(1).map((node) => node.cloneNode(true)));
-	const character = catalog.characters.find((entry) => entry.name === name);
-	if (!character) return el("p", { class: "hint" }, "Character sheet unavailable.");
-	const sections = character.tracks.map((track) => {
-		const section = el("article", { class: "track" }, el("h3", {}, track.ability));
-		if (track.description) section.append(el("p", {}, track.description));
-		const rules = track.relatedRules || track.rules;
-		if (rules?.length) section.append(el("p", { class: "rule-links" }, `Related rules: ${rules.join(", ")}`));
-		if (track.evolution) {
-			const evolution = el("div", { class: "evolution" }, el("h4", {}, track.evolution.ability));
-			if (track.evolution.description) evolution.append(el("p", {}, track.evolution.description));
-			const evolutionRules = track.evolution.relatedRules || track.evolution.rules;
-			if (evolutionRules?.length) evolution.append(el("p", { class: "rule-links" }, `Related rules: ${evolutionRules.join(", ")}`));
-			section.append(evolution);
-		}
-		return section;
-	});
-	if (character.imported) {
-		sections.unshift(el("p", { class: "hint" }, "Imported ability text is a reference sheet; the game does not automate these effects."));
-	}
-	return el("div", {}, ...sections);
-}
-
-function openCharacterSheet(name) {
-	showDialog(`${name} character sheet`, characterSheetContent(name), [{ label: "Close" }]);
+	box.replaceChildren(...[...sheet.children].slice(1).map((node) => node.cloneNode(true)));
 }
 
 function buildSetup() {
@@ -171,137 +116,7 @@ function rebuildPlayerRows() {
 	});
 }
 
-function parseRuleReferences(value) {
-	return [...new Set(value.split(/[\n,]/).map((item) => item.trim()).filter(Boolean))];
-}
-
-function addCreatorAbility() {
-	const container = $("creator-abilities");
-	if (container.children.length >= 10) {
-		$("creator-status").textContent = "A character can have at most 10 abilities.";
-		return;
-	}
-	const ability = el("fieldset", { class: "creator-ability" }, el("legend", {}, `Ability ${container.children.length + 1}`));
-	const abilityName = el("input", { class: "creator-ability-name", required: true, maxLength: 100 });
-	const description = el("textarea", { class: "creator-ability-description", rows: 3 });
-	const relatedRules = el("textarea", { class: "creator-ability-rules", rows: 2, placeholder: "Separate rule names with commas or new lines" });
-	const evolution = el("details", { class: "creator-evolution" }, el("summary", {}, "Optional evolution"));
-	const evolutionName = el("input", { class: "creator-evolution-name", maxLength: 100 });
-	const evolutionDescription = el("textarea", { class: "creator-evolution-description", rows: 3 });
-	const evolutionRules = el("textarea", { class: "creator-evolution-rules", rows: 2, placeholder: "Separate rule names with commas or new lines" });
-	evolution.append(
-		el("label", {}, "Evolution name", evolutionName),
-		el("label", {}, "Evolution description", evolutionDescription),
-		el("label", {}, "Related rules", evolutionRules));
-	const remove = el("button", {
-		type: "button",
-		onclick: () => {
-			if (container.children.length > 1) {
-				ability.remove();
-				[...container.children].forEach((row, index) => { row.querySelector("legend").textContent = `Ability ${index + 1}`; });
-			}
-		},
-	}, "Remove ability");
-	ability.append(
-		el("label", {}, "Ability name", abilityName),
-		el("label", {}, "Description", description),
-		el("label", {}, "Related rules", relatedRules),
-		evolution, remove);
-	container.append(ability);
-	$("creator-status").textContent = "";
-}
-
 $("player-count").addEventListener("change", rebuildPlayerRows);
-$("import-character-pack").addEventListener("click", () => $("character-pack-file").click());
-$("character-pack-file").addEventListener("change", async (event) => {
-	const file = event.target.files[0];
-	event.target.value = "";
-	if (!file) return;
-	const status = $("character-import-status");
-	let result, importedPack;
-	try {
-		const text = await file.text();
-		importedPack = JSON.parse(text);
-		result = JSON.parse(bridge.import_characters(text));
-	} catch (error) {
-		status.textContent = `Could not read the character pack: ${error.message}`;
-		return;
-	}
-	if (result.error) {
-		status.textContent = `Import failed: ${result.error}`;
-		return;
-	}
-	catalog = JSON.parse(bridge.get_catalog());
-	selectedCharacter = importedPack.characters.at(-1).name;
-	buildSetup();
-	try {
-		localStorage.setItem(CHARACTER_PACK_STORAGE_KEY, bridge.export_characters());
-		status.textContent = `Imported ${result.imported} character${result.imported === 1 ? "" : "s"} and saved them in this browser.`;
-	} catch (error) {
-		status.textContent = `Imported ${result.imported} character${result.imported === 1 ? "" : "s"} for this session, but could not save them: ${error.message}`;
-	}
-	$("export-character-pack").disabled = !JSON.parse(bridge.export_characters()).characters.length;
-});
-$("add-creator-ability").addEventListener("click", addCreatorAbility);
-$("character-creator").addEventListener("submit", (event) => {
-	event.preventDefault();
-	const status = $("creator-status");
-	let abilities;
-	try {
-		abilities = [...$("creator-abilities").querySelectorAll(".creator-ability")].map((row) => {
-			const value = (selector) => row.querySelector(selector).value.trim();
-			const abilityName = value(".creator-ability-name");
-			const evolutionName = value(".creator-evolution-name");
-			const evolutionDescription = value(".creator-evolution-description");
-			const evolutionRules = parseRuleReferences(value(".creator-evolution-rules"));
-			if (!evolutionName && (evolutionDescription || evolutionRules.length)) {
-				throw new Error(`Add an evolution name or clear the evolution details for ${abilityName}.`);
-			}
-			return {
-				name: abilityName,
-				description: value(".creator-ability-description"),
-				relatedRules: parseRuleReferences(value(".creator-ability-rules")),
-				...(evolutionName ? { evolution: {
-					name: evolutionName,
-					description: evolutionDescription,
-					relatedRules: evolutionRules,
-				} } : {}),
-			};
-		});
-	} catch (error) {
-		status.textContent = `Could not save character: ${error.message}`;
-		return;
-	}
-	const pack = { formatVersion: 1, characters: [{ name: $("creator-name").value.trim(), abilities }] };
-	let result;
-	try {
-		result = JSON.parse(bridge.import_characters(JSON.stringify(pack)));
-	} catch (error) {
-		status.textContent = `Could not save character: ${error.message}`;
-		return;
-	}
-	if (result.error) {
-		status.textContent = `Could not save character: ${result.error}`;
-		return;
-	}
-	catalog = JSON.parse(bridge.get_catalog());
-	selectedCharacter = pack.characters[0].name;
-	buildSetup();
-	$("export-character-pack").disabled = !JSON.parse(bridge.export_characters()).characters.length;
-	try {
-		localStorage.setItem(CHARACTER_PACK_STORAGE_KEY, bridge.export_characters());
-		status.textContent = `${pack.characters[0].name} is ready to select and play.`;
-	} catch (error) {
-		status.textContent = `${pack.characters[0].name} is ready for this session, but could not be saved: ${error.message}`;
-	}
-});
-$("export-character-pack").addEventListener("click", () => {
-	const pack = bridge.export_characters();
-	const blobUrl = URL.createObjectURL(new Blob([pack], { type: "application/json" }));
-	const link = el("a", { href: blobUrl, download: "palace-character-pack.json" });
-	link.click();
-	setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
-});
 $("restore-defaults").addEventListener("click", () => {
 	$("player-count").value = catalog.defaults.players;
 	$("deck-count").value = catalog.defaults.decks;
@@ -309,9 +124,6 @@ $("restore-defaults").addEventListener("click", () => {
 	playerRows = [];
 	rebuildPlayerRows();
 });
-$("creator-abilities").replaceChildren();
-addCreatorAbility();
-$("export-character-pack").disabled = !JSON.parse(bridge.export_characters()).characters.length;
 
 $("start").addEventListener("click", () => {
 	$("setup-error").textContent = "";
@@ -379,10 +191,6 @@ function showAsk(ask, answers, action) {
 
 $("show-log").addEventListener("click", () => {
 	if (state) showDialog("Action log", el("pre", {}, state.log.join("\n")), [{ label: "Close" }]);
-});
-$("show-character-sheet").addEventListener("click", () => {
-	const character = state?.players[state.viewer]?.character;
-	if (character) openCharacterSheet(character);
 });
 
 // ---------------------------------------------------------------- admin menu
@@ -556,8 +364,6 @@ function render() {
 		: st.phase === "over" ? `${st.winner} finished first.`
 		: `Round ${st.round}  |  Turn ${st.turn}  |  ${st.players[st.current].name}`;
 	$("status").textContent = phaseText + "\n" + st.notice;
-	$("show-character-sheet").textContent = st.players[st.viewer]?.character
-		? `${st.players[st.viewer].character} sheet` : "My character sheet";
 	renderPiles();
 	renderPlayers();
 	renderHand();
@@ -663,7 +469,6 @@ function renderPlayers() {
 		const node = el("div", { class: "player" + (player.current ? " current" : "") },
 			el("strong", { class: "player-name" }, player.name),
 			player.character ? el("span", { class: "player-character" }, player.character) : "",
-			player.character ? el("button", { class: "player-abilities", type: "button", onclick: () => openCharacterSheet(player.character) }, "Character sheet") : "",
 			player.current ? el("span", { class: "current-turn" }, "Turn") : "",
 			el("div", { class: "player-zones" }, zones));
 		if (player.tags.length) {

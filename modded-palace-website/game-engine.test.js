@@ -38,61 +38,10 @@ test("catalog keeps gameplay metadata without embedding page descriptions", () =
 	const charactersHtml = fs.readFileSync(new URL("./characters.html", `file://${__filename}`), "utf8");
 	const rulesHtml = fs.readFileSync(new URL("./rules.html", `file://${__filename}`), "utf8");
 	assert.match(indexHtml, /id="character-details"/);
-	assert.match(indexHtml, /id="character-creator"/);
-	assert.match(indexHtml, /id="show-character-sheet"/);
 	assert.deepEqual([...charactersHtml.matchAll(/data-character="([^"]+)"/g)].map((match) => match[1]), ["Sukuna", "Gojo"]);
 	assert.match(charactersHtml, /Spider Net Cleave/);
 	assert.match(rulesHtml, /Domain Clashing/);
 	assert.doesNotMatch(charactersHtml + rulesHtml, /<script\b/i);
-});
-
-test("imported characters are selectable and their abilities remain reference-only", () => {
-	const bridge = createBridge();
-	const pack = {
-		formatVersion: 1,
-		characters: [{
-			name: "Catalog-only character",
-			abilities: [{
-				name: "Simple Domain",
-				description: "A description that must not activate the built-in ability.",
-				relatedRules: ["A rule reference"],
-				evolution: { name: "Mastered Six Eyes", description: "An informational evolution.", relatedRules: [] },
-			}],
-		}],
-	};
-	const result = JSON.parse(bridge.import_characters(JSON.stringify(pack)));
-	assert.equal(result.imported, 1);
-	const character = result.characters.find((entry) => entry.name === "Catalog-only character");
-	assert.equal(character.imported, true);
-	assert.equal(character.tracks[0].description, pack.characters[0].abilities[0].description);
-	assert.deepEqual(character.tracks[0].relatedRules, ["A rule reference"]);
-
-	const exported = JSON.parse(bridge.export_characters());
-	assert.deepEqual(exported.characters, pack.characters);
-	let game = JSON.parse(bridge.new_game(settings([
-		{ type: "Human", character: "Catalog-only character" },
-		{ type: "Bot", character: "Gojo" },
-	])));
-	assert.equal(game.phase, "setup");
-	assert.equal(bridge.game.effective(0, "Simple Domain"), null);
-	assert.equal(bridge.evolvable(0).length, 0);
-	game = finishSetup(bridge, game);
-	assert.equal(game.phase, "play");
-	assert.equal(game.players[0].character, "Catalog-only character");
-});
-
-test("character pack validation is atomic and protects built-in characters", () => {
-	const bridge = createBridge();
-	const result = JSON.parse(bridge.import_characters(JSON.stringify({
-		formatVersion: 1,
-		characters: [
-			{ name: "Should not be partially imported", abilities: [{ name: "Ability" }] },
-			{ name: "Sukuna", abilities: [{ name: "Replacement" }] },
-		],
-	})));
-	assert.match(result.error, /built in and cannot be replaced/);
-	assert.deepEqual(JSON.parse(bridge.get_catalog()).characters.map((character) => character.name), ["Sukuna", "Gojo"]);
-	assert.match(JSON.parse(bridge.import_characters(JSON.stringify({ formatVersion: 2, characters: [] }))).error, /formatVersion 1/);
 });
 
 test("new games validate player, deck, and human-player requirements", () => {

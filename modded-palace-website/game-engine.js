@@ -7,7 +7,7 @@
 		const MAX_PLAYERS = 12;
 		const DEFAULTS = { players: 6, decks: 3, jokers: 8 };
 		const RANDOM = "Random";
-		const BUILT_IN_CHARACTERS = {
+		const CHARACTERS = {
 			Sukuna: [
 				{ ability: "Cleave", rules: ["Top card discard"], evolution: { ability: "Spider Net Cleave" } },
 				{ ability: "World Cutting Slash", evolution: { ability: "Waffle Cutting Slash" } },
@@ -23,90 +23,14 @@
 				{ ability: "Simple Domain" },
 			],
 		};
-		const CUSTOM_CHARACTERS = {};
-		let CHARACTERS = { ...BUILT_IN_CHARACTERS };
-
-		function cleanImportedCharacter(character) {
-			if (!character || typeof character !== "object" || Array.isArray(character)) throw Error("Each character must be an object");
-			const name = typeof character.name === "string" ? character.name.trim() : "";
-			if (!name || name === RANDOM) throw Error("Each character needs a name other than Random");
-			if (!Array.isArray(character.abilities) || character.abilities.length < 1 || character.abilities.length > 10) {
-				throw Error(`${name} must have between 1 and 10 abilities`);
-			}
-			const abilityNames = new Set();
-			const tracks = character.abilities.map((ability) => {
-				if (!ability || typeof ability !== "object" || Array.isArray(ability)) throw Error(`${name} has an invalid ability`);
-				const abilityName = typeof ability.name === "string" ? ability.name.trim() : "";
-				if (!abilityName || abilityNames.has(abilityName)) throw Error(`${name} has a missing or duplicate ability name`);
-				abilityNames.add(abilityName);
-				const description = typeof ability.description === "string" ? ability.description.trim() : "";
-				const relatedRules = cleanRelatedRules(ability.relatedRules, `${name}: ${abilityName}`);
-				let evolution;
-				if (ability.evolution !== undefined) {
-					if (!ability.evolution || typeof ability.evolution !== "object" || Array.isArray(ability.evolution)) {
-						throw Error(`${name}: ${abilityName} has an invalid evolution`);
-					}
-					const evolutionName = typeof ability.evolution.name === "string" ? ability.evolution.name.trim() : "";
-					if (!evolutionName) throw Error(`${name}: ${abilityName} evolution needs a name`);
-					evolution = {
-						ability: evolutionName,
-						description: typeof ability.evolution.description === "string" ? ability.evolution.description.trim() : "",
-						relatedRules: cleanRelatedRules(ability.evolution.relatedRules, `${name}: ${evolutionName}`),
-					};
-				}
-				return {
-					ability: abilityName, description, relatedRules, displayOnly: true,
-					...(evolution ? { evolution } : {}),
-				};
-			});
-			return { name, tracks };
-		}
-
-		function cleanRelatedRules(rules, label) {
-			if (rules === undefined) return [];
-			if (!Array.isArray(rules) || rules.some((rule) => typeof rule !== "string" || !rule.trim())) {
-				throw Error(`${label} relatedRules must be an array of non-empty rule names`);
-			}
-			return [...new Set(rules.map((rule) => rule.trim()))];
-		}
-
-		function importedCharacterPackage(text) {
-			const data = JSON.parse(text);
-			if (!data || typeof data !== "object" || data.formatVersion !== 1 || !Array.isArray(data.characters) || !data.characters.length) {
-				throw Error("Expected a character pack with formatVersion 1 and a non-empty characters array");
-			}
-			const seen = new Set();
-			const characters = data.characters.map(cleanImportedCharacter);
-			for (const character of characters) {
-				if (seen.has(character.name)) throw Error(`Duplicate character in import: ${character.name}`);
-				if (BUILT_IN_CHARACTERS[character.name]) throw Error(`${character.name} is built in and cannot be replaced`);
-				seen.add(character.name);
-			}
-			return characters;
-		}
-
-		function refreshCharacters() {
-			CHARACTERS = { ...BUILT_IN_CHARACTERS, ...CUSTOM_CHARACTERS };
-		}
-
-		function characterCatalog() {
-			return Object.entries(CHARACTERS).map(([name, tracks]) => ({
-				name,
-				imported: tracks.length > 0 && tracks.every((track) => track.displayOnly === true),
-				tracks: tracks.map((track) => ({
-					ability: track.ability,
-					rules: track.rules || [],
-					...(track.description ? { description: track.description } : {}),
-					...(track.relatedRules?.length ? { relatedRules: track.relatedRules } : {}),
-					...(track.evolution ? { evolution: {
-						ability: track.evolution.ability,
-						rules: track.evolution.rules || [],
-						...(track.evolution.description ? { description: track.evolution.description } : {}),
-						...(track.evolution.relatedRules?.length ? { relatedRules: track.evolution.relatedRules } : {}),
-					} } : {}),
-				})),
-			}));
-		}
+		const characterCatalog = Object.entries(CHARACTERS).map(([name, tracks]) => ({
+			name,
+			tracks: tracks.map((track) => ({
+				ability: track.ability,
+				rules: track.rules || [],
+				evolution: track.evolution ? { ability: track.evolution.ability, rules: track.evolution.rules || [] } : undefined,
+			})),
+		}));
 
 	const rankValue = (card, jokerValue = null) => card.rank === "Joker" ? (jokerValue || 14) : VALUES[card.rank];
 	const cardText = (card) => card.rank === "Joker" ? "Joker" : `${card.rank} of ${card.suit}`;
@@ -130,10 +54,10 @@
 			shuffle(deck);
 			this.log = [];
 			this.players = rows.map((row, index) => {
-				const character = row.character === RANDOM ? Object.keys(CHARACTERS)[Math.floor(Math.random() * Object.keys(CHARACTERS).length)] : row.character;
+				const character = row.character === RANDOM ? Object.keys(CHARACTERS)[Math.floor(Math.random() * 2)] : row.character;
 				return {
 					name: playerName(index, bots, humanCount), character, bot: bots[index],
-					hand: [], face_up: [], face_down: [], ability_states: Object.fromEntries((CHARACTERS[character] || []).map((track) => [track.ability, { removed: false, evolved: false, uses: 0, round: 0 }])),
+					hand: [], face_up: [], face_down: [], ability_states: Object.fromEntries(CHARACTERS[character].map((track) => [track.ability, { removed: false, evolved: false, uses: 0, round: 0 }])),
 					cut_meter: 0, is_eliminated: false, enchain_used: false, vow_card: null, god_rule: "", god_round: 0,
 					revealed_cards: [], known_cards: [], it_until_round: 0, simple_domain_active: false, simple_domain_used: false,
 					cleanse_round: 0, swap_round: 0, rescue_round: -99, pending_world_slashes: 0, pending_limitless_effects: [], ace_streak: 0,
@@ -186,7 +110,6 @@
 		effective(index, base = null) {
 			const p = this.players[index];
 			for (const track of CHARACTERS[p.character]) {
-				if (track.displayOnly) continue;
 				if (track.ability !== base && track.evolution?.ability !== base) continue;
 				const state = p.ability_states[track.ability];
 				if (state.evolved) return track.evolution.ability;
@@ -206,7 +129,6 @@
 			const p = this.players[index];
 			if (p.god_rule === rule) return true;
 			return CHARACTERS[p.character].some((track) => {
-				if (track.displayOnly) return false;
 				const state = p.ability_states[track.ability];
 				if (!state || state.removed) return false;
 				const granted = state.evolved ? track.evolution.rules : track.rules;
@@ -477,35 +399,7 @@
 		}
 		you(index) { return this.hotSeat() ? this.game.players[index].name : "You"; }
 		get_catalog() {
-			return JSON.stringify({ characters: characterCatalog(), max_players: MAX_PLAYERS, defaults: DEFAULTS, random: RANDOM });
-		}
-		import_characters(text) {
-			try {
-				const characters = importedCharacterPackage(text);
-				for (const character of characters) CUSTOM_CHARACTERS[character.name] = character.tracks;
-				refreshCharacters();
-				return JSON.stringify({ imported: characters.length, characters: characterCatalog() });
-			} catch (error) {
-				return JSON.stringify({ error: error.message });
-			}
-		}
-		export_characters() {
-			return JSON.stringify({
-				formatVersion: 1,
-				characters: Object.entries(CUSTOM_CHARACTERS).map(([name, tracks]) => ({
-					name,
-					abilities: tracks.map((track) => ({
-						name: track.ability,
-						description: track.description || "",
-						relatedRules: track.relatedRules || [],
-						...(track.evolution ? { evolution: {
-							name: track.evolution.ability,
-							description: track.evolution.description || "",
-							relatedRules: track.evolution.relatedRules || [],
-						} } : {}),
-					})),
-				})),
-			});
+			return JSON.stringify({ characters: characterCatalog, max_players: MAX_PLAYERS, defaults: DEFAULTS, random: RANDOM });
 		}
 		new_game(settingsText) {
 			const settings = JSON.parse(settingsText);
@@ -634,7 +528,7 @@
 		}
 		evolvable(i) {
 			const p = this.game.players[i];
-			return CHARACTERS[p.character].filter((track) => !track.displayOnly && track.evolution && !p.ability_states[track.ability].removed && !p.ability_states[track.ability].evolved);
+			return CHARACTERS[p.character].filter((track) => track.evolution && !p.ability_states[track.ability].removed && !p.ability_states[track.ability].evolved);
 		}
 		canEnchain(i) {
 			const g = this.game, p = g.players[i], ability = g.effective(i, "Enchain");

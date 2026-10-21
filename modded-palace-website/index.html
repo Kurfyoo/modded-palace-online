@@ -41,29 +41,6 @@
 					<div id="character-list" class="list"></div>
 					<div id="character-details" class="panel" aria-live="polite"></div>
 					<a class="button-link" href="characters.html" target="_blank" rel="noopener">All character descriptions</a>
-					<div class="character-import panel">
-						<h3>Character creator studio</h3>
-						<p class="hint">Create a character here or import a JSON pack. Custom characters can be selected and played; their ability sheets are available during the game. Ability effects are not automated.</p>
-						<div class="toolbar">
-							<button id="import-character-pack" type="button">Import JSON</button>
-							<button id="export-character-pack" type="button">Export imported characters</button>
-							<a class="button-link" href="character-import-template.json" download>Template</a>
-						</div>
-						<input id="character-pack-file" type="file" accept=".json,application/json" hidden>
-						<p id="character-import-status" class="hint" aria-live="polite"></p>
-						<details>
-							<summary>Create a character</summary>
-							<form id="character-creator">
-								<label>Character name <input id="creator-name" required maxlength="80"></label>
-								<div id="creator-abilities"></div>
-								<div class="toolbar">
-									<button id="add-creator-ability" type="button">Add ability</button>
-									<button type="submit" class="primary">Save character</button>
-								</div>
-							</form>
-							<p id="creator-status" class="hint" aria-live="polite"></p>
-						</details>
-					</div>
 				</section>
 				<section>
 					<h2>Game setup</h2>
@@ -85,7 +62,6 @@
 			<header>
 				<div id="status"></div>
 				<div class="toolbar">
-					<button id="show-character-sheet" type="button">My character sheet</button>
 					<button id="show-log" type="button">Action log</button>
 					<a class="button-link" href="rules.html" target="_blank" rel="noopener">Rules</a>
 					<a class="button-link" href="characters.html" target="_blank" rel="noopener">Characters</a>
