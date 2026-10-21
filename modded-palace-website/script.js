@@ -226,7 +226,7 @@ const RULES_SECTIONS = [
 	]],
 	["Taking a turn", [
 		"There are two discard piles. On your turn you choose one of them and play at least one card on it. Any extra cards you play in the same turn must go on that same pile. Press End turn when you are done.",
-		"Your hand is topped up to 3 cards after each play while the draw piles last. Face-up cards can only be played once your hand and both draw piles are empty, and face-down cards after that (you play them blind).",
+		"Your hand is topped up to 3 cards after each play while the draw piles last. Face-Up cards can only be played once your hand and both draw piles are empty, and face-down cards after that (you play them blind).",
 		"The first card you play must be equal to or higher than the top card of the pile (Jack 11, Queen 12, King 13, Ace 14). An empty pile accepts anything.",
 		"After your first card, you can keep stacking on the pile you just played on, as long as each card is the same value as the top card or exactly one higher.",
 	]],
@@ -504,7 +504,7 @@ function renderPiles() {
 			hiddenNode(index, null, { compact: true }),
 			el("small", { class: "pile-count" }, `${count} cards`)));
 	});
-	[["Destroyed pile", st.destroyed], ["Deleted pile", st.deleted]].forEach(([title, cards]) => {
+	[["Destroyed Pile", st.destroyed], ["Deleted Pile", st.deleted]].forEach(([title, cards]) => {
 		topPiles.append(el("div", { class: "pile-stack collection-pile" },
 		el("strong", { class: "pile-label" }, title),
 		cards.length ? cardNode(cardFromLabel(cards.at(-1)), { compact: true }) : el("div", { class: "empty-card" }),
@@ -519,7 +519,7 @@ function renderPiles() {
 	st.discards.forEach((pile, index) => {
 		const canPick = st.phase === "play" && st.me.is_current;
 		const node = el("div", { class: "pile-stack discard-pile" + (selPile === index ? " selected" : "") });
-		node.append(el("strong", { class: "pile-label" }, `Discard pile ${index + 1}`));
+		node.append(el("strong", { class: "pile-label" }, `Discard Pile ${index + 1}`));
 		const select = el("button", { class: "discard-select", type: "button", disabled: !canPick, ariaLabel: `Select discard pile ${index + 1}${pile.top ? `, ${pile.top}` : ", empty"}`, onclick: () => {
 			if (canPick) {
 				selPile = index;
@@ -530,7 +530,7 @@ function renderPiles() {
 		node.append(select, el("small", { class: "pile-count" }, `${pile.count} cards`));
 		const viewButton = el("button", { onclick: (event) => {
 			event.stopPropagation();
-			showDialog(`Discard pile ${index + 1}`, cardGallery(pile.cards), [{ label: "Close" }]);
+			showDialog(`Discard Pile ${index + 1}`, cardGallery(pile.cards), [{ label: "Close" }]);
 		}, class: "pile-view" }, "View pile");
 		node.append(viewButton);
 		discards.append(node);
@@ -645,8 +645,8 @@ function renderHand() {
 	});
 	cards.append(el("div", { class: "own-card-zones" },
 		playerZone("Hand", me.hand.length, handCards),
-		playerZone("Face-up", me.face_up.length, faceUpCards),
-		playerZone("Face-down", me.face_down.length, faceDownCards)));
+		playerZone("Face-Up", me.face_up.length, faceUpCards),
+		playerZone("Face-Down", me.face_down.length, faceDownCards)));
 
 	if (st.draw_choice) {
 		draw.append(el("p", { class: "draw-prompt" }, "Mastered Six Eyes: choose a card to draw."));
