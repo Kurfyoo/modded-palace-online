@@ -489,26 +489,37 @@ function closeHandoffIfAny() {
 
 function renderPiles() {
 	const st = state;
-	const box = $("piles");
-	box.replaceChildren();
+	const topPiles = $("top-piles");
+	const drawLeft = $("draw-pile-left");
+	const drawRight = $("draw-pile-right");
+	const discards = $("discard-piles");
+	topPiles.replaceChildren();
+	drawLeft.replaceChildren();
+	drawRight.replaceChildren();
+	discards.replaceChildren();
 	st.draw_piles.forEach((count, index) => {
-		box.append(el("div", { class: "pile-stack draw-pile" },
+		const container = index === 0 ? drawLeft : drawRight;
+		container.append(el("div", { class: "pile-stack draw-pile" },
+			el("strong", { class: "pile-label" }, `Draw pile ${index + 1}`),
 			hiddenNode(index, null, { compact: true }),
-			el("div", { class: "pile-copy" }, el("strong", {}, `Draw pile ${index + 1}`), el("small", {}, `${count} cards`))));
+			el("small", { class: "pile-count" }, `${count} cards`)));
 	});
 	[["Destroyed pile", st.destroyed], ["Deleted pile", st.deleted]].forEach(([title, cards]) => {
-		box.append(el("button", {
-			class: "pile-stack collection-pile",
-			type: "button",
-			ariaLabel: `${title}, ${cards.length} cards. View pile.`,
-			onclick: () => showDialog(title, cardGallery(cards), [{ label: "Close" }]),
-		},
+		topPiles.append(el("div", { class: "pile-stack collection-pile" },
+		el("strong", { class: "pile-label" }, title),
 		cards.length ? cardNode(cardFromLabel(cards.at(-1)), { compact: true }) : el("div", { class: "empty-card" }),
-		el("div", { class: "pile-copy" }, el("strong", {}, title), el("small", {}, `${cards.length} cards`))));
+		el("small", { class: "pile-count" }, `${cards.length} cards`),
+		el("button", {
+			class: "pile-view",
+			type: "button",
+			ariaLabel: `View ${title.toLowerCase()}`,
+			onclick: () => showDialog(title, cardGallery(cards), [{ label: "Close" }]),
+		}, "View pile")));
 	});
 	st.discards.forEach((pile, index) => {
 		const canPick = st.phase === "play" && st.me.is_current;
 		const node = el("div", { class: "pile-stack discard-pile" + (selPile === index ? " selected" : "") });
+		node.append(el("strong", { class: "pile-label" }, `Discard pile ${index + 1}`));
 		const select = el("button", { class: "discard-select", type: "button", disabled: !canPick, ariaLabel: `Select discard pile ${index + 1}${pile.top ? `, ${pile.top}` : ", empty"}`, onclick: () => {
 			if (canPick) {
 				selPile = index;
@@ -516,35 +527,40 @@ function renderPiles() {
 			}
 		} },
 		pile.top ? cardNode(cardFromLabel(pile.top), { compact: true }) : el("div", { class: "empty-card" }));
-		node.append(select, el("div", { class: "pile-copy" }, el("strong", {}, `Discard pile ${index + 1}`), el("small", {}, `${pile.count} cards`)));
+		node.append(select, el("small", { class: "pile-count" }, `${pile.count} cards`));
 		const viewButton = el("button", { onclick: (event) => {
 			event.stopPropagation();
 			showDialog(`Discard pile ${index + 1}`, cardGallery(pile.cards), [{ label: "Close" }]);
-		} }, "View pile");
+		}, class: "pile-view" }, "View pile");
 		node.append(viewButton);
-		box.append(node);
+		discards.append(node);
 	});
 }
 
 function playerZone(title, count, cards) {
 	return el("div", { class: "player-zone" },
 		el("span", { class: "zone-label" }, `${title} · ${count}`),
-		el("div", { class: "mini-cards" }, ...cards));
+		cards.length
+			? el("div", { class: "mini-cards" }, ...cards)
+			: el("div", { class: "mini-cards empty-zone" }, "Empty"));
 }
 
 function renderPlayers() {
-	const box = $("players");
-	box.replaceChildren();
-	state.players.forEach((player) => {
-		const handBacks = Array.from({ length: Math.min(player.hand, 6) }, (_, index) => hiddenNode(index, null, { compact: true }));
-		const faceDownBacks = Array.from({ length: Math.min(player.face_down, 3) }, (_, index) => hiddenNode(index, null, { compact: true }));
+	const left = $("left-players");
+	const right = $("right-players");
+	left.replaceChildren();
+	right.replaceChildren();
+	const opponents = state.players.filter((_, index) => index !== state.viewer);
+	opponents.forEach((player, index) => {
+		const handBacks = Array.from({ length: Math.min(Math.max(0, player.hand - player.revealed.length), 6) }, (_, index) => hiddenNode(index, null, { compact: true }));
+		handBacks.push(...player.revealed.map((label) => cardNode(cardFromLabel(label), { compact: true })));
+		const faceDownCards = player.seen.map((label) => cardNode(cardFromLabel(label), { compact: true }));
+		faceDownCards.push(...Array.from({ length: Math.min(Math.max(0, player.face_down - player.seen.length), 3) }, (_, index) => hiddenNode(index, null, { compact: true })));
 		const zones = [
 			playerZone("Hand", player.hand, handBacks),
 			playerZone("Face-up", player.face_up.length, player.face_up.map((card) => cardNode(card, { compact: true }))),
-			playerZone("Face-down", player.face_down, faceDownBacks),
+			playerZone(player.seen.length ? "Face-down / seen" : "Face-down", player.face_down, faceDownCards),
 		];
-		if (player.revealed.length) zones.push(playerZone("Revealed", player.revealed.length, player.revealed.map((label) => cardNode(cardFromLabel(label), { compact: true }))));
-		if (player.seen.length) zones.push(playerZone("Seen", player.seen.length, player.seen.map((label) => cardNode(cardFromLabel(label), { compact: true }))));
 		const node = el("div", { class: "player" + (player.current ? " current" : "") },
 			el("strong", { class: "player-name" }, player.name),
 			player.character ? el("span", { class: "player-character" }, player.character) : "",
@@ -553,7 +569,7 @@ function renderPlayers() {
 		if (player.tags.length) {
 			node.append(el("div", { class: "player-tags" }, ...player.tags.map((tag) => el("span", { class: "tag" }, tag))));
 		}
-		box.append(node);
+		(index % 2 === 0 ? left : right).append(node);
 	});
 }
 
@@ -603,25 +619,34 @@ function renderHand() {
 	}
 
 	const me = st.me;
-	if (me.mode === "reveal") {
-		$("hand-title").textContent = `${me.name}: choose a card from your hand to reveal until it is played`;
-		me.hand.forEach((card, index) => cards.append(cardNode(card, { onclick: () => send({ type: "reveal", card: index }) })));
-		return;
-	}
-
 	const source = me.source;
+	const revealing = me.mode === "reveal";
 	if (!me.is_current) {
 		$("hand-title").textContent = st.players[st.current].bot ? "Bots are playing" : `Waiting for ${st.players[st.current].name}`;
+	} else if (revealing) {
+		$("hand-title").textContent = `${me.name}: choose a card from your hand to reveal`;
 	} else {
 		$("hand-title").textContent = source ? `${st.hot_seat ? me.name + "'s" : "Your"} ${source.replace("_", " ")}` : "No cards available";
 	}
-	if (me.is_current && source) {
-		const list = source === "hand" ? me.hand : source === "face_up" ? me.face_up : me.face_down;
-		list.forEach((card, index) => {
-			const options = { selected: selCard === index, onclick: () => { selCard = index; render(); } };
-			cards.append(source === "face_down" ? hiddenNode(index, card.known, options) : cardNode(card, options));
-		});
-	}
+	const handCards = me.hand.map((card, index) => {
+		const active = me.is_current && (revealing || source === "hand");
+		const options = active ? { selected: !revealing && selCard === index, onclick: () => revealing ? send({ type: "reveal", card: index }) : (selCard = index, render()) } : {};
+		return cardNode(card, options);
+	});
+	const faceUpCards = me.face_up.map((card, index) => {
+		const active = me.is_current && !revealing && source === "face_up";
+		const options = active ? { selected: selCard === index, onclick: () => { selCard = index; render(); } } : {};
+		return cardNode(card, options);
+	});
+	const faceDownCards = me.face_down.map((card, index) => {
+		const active = me.is_current && !revealing && source === "face_down";
+		const options = active ? { selected: selCard === index, onclick: () => { selCard = index; render(); } } : {};
+		return hiddenNode(index, card.known, options);
+	});
+	cards.append(el("div", { class: "own-card-zones" },
+		playerZone("Hand", me.hand.length, handCards),
+		playerZone("Face-up", me.face_up.length, faceUpCards),
+		playerZone("Face-down", me.face_down.length, faceDownCards)));
 
 	if (st.draw_choice) {
 		draw.append(el("p", { class: "draw-prompt" }, "Mastered Six Eyes: choose a card to draw."));
@@ -637,11 +662,11 @@ function renderHand() {
 		}
 	}
 
-	if (st.all_humans_finished) {
+	if (!revealing && st.all_humans_finished) {
 		actions.append(el("button", { class: "primary", onclick: () => { fastForward = true; applyState(state); } }, "Skip to results"));
 		return;
 	}
-	if (me.is_current) {
+	if (me.is_current && !revealing) {
 		const canPlay = source && selCard !== null && selPile !== null && !me.pending && !st.draw_choice;
 		actions.append(
 			el("button", {
@@ -652,6 +677,7 @@ function renderHand() {
 			el("button", { disabled: !me.can_end, onclick: () => send({ type: "end_turn" }) }, "End turn"),
 		);
 	}
+	if (revealing) return;
 	st.buttons.forEach((button) => {
 		if (button.info) {
 			actions.append(el("span", { class: "info" }, button.label));

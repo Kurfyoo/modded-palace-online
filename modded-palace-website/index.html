@@ -67,14 +67,28 @@
 					<button id="new-game" type="button">New game</button>
 				</div>
 			</header>
-			<section id="piles"></section>
-			<section id="players"></section>
-			<section id="hand-area">
-				<h2 id="hand-title"></h2>
-				<div id="draw-choice"></div>
-				<div id="cards" class="cards"></div>
-				<div id="actions" class="actions"></div>
-			</section>
+			<div id="table-layout" class="table-layout">
+				<section id="top-piles" class="top-piles" aria-label="Destroyed and deleted piles"></section>
+				<aside id="left-players" class="opponent-rail" aria-label="Opponents on the left"></aside>
+				<section id="center-table" aria-label="Table">
+					<div class="center-piles">
+						<div id="draw-pile-left"></div>
+						<div id="discard-piles"></div>
+						<div id="draw-pile-right"></div>
+					</div>
+				</section>
+				<aside id="right-players" class="opponent-rail" aria-label="Opponents on the right"></aside>
+				<section id="hand-area" aria-label="Your cards">
+					<h2 id="hand-title"></h2>
+					<div class="hand-content">
+						<div id="cards" class="cards"></div>
+						<div class="hand-controls">
+							<div id="draw-choice"></div>
+							<div id="actions" class="actions"></div>
+						</div>
+					</div>
+				</section>
+			</div>
 		</main>
 
 		<main id="rules-page" hidden>
