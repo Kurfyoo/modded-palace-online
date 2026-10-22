@@ -41,6 +41,7 @@ function boot() {
 	if (!bridge) throw new Error("The game engine could not be loaded.");
 	catalog = JSON.parse(bridge.get_catalog());
 	selectedCharacter = catalog.characters[0].name;
+	applySetupDefaults();
 	$("loading").hidden = true;
 	buildSetup();
 	loadCharacterDescriptions();
@@ -59,6 +60,12 @@ function loadCharacterDescriptions() {
 	const sheets = [...document.querySelectorAll(".character-sheet[data-character]")];
 	characterDescriptions = new Map(sheets.map((sheet) => [sheet.dataset.character, sheet]));
 	renderCharacterDetails();
+}
+
+function applySetupDefaults() {
+	$("player-count").value = catalog.defaults.players;
+	$("deck-count").value = catalog.defaults.decks;
+	$("joker-count").value = catalog.defaults.jokers;
 }
 
 function renderPage() {
@@ -129,9 +136,7 @@ function rebuildPlayerRows() {
 
 $("player-count").addEventListener("change", rebuildPlayerRows);
 $("restore-defaults").addEventListener("click", () => {
-	$("player-count").value = catalog.defaults.players;
-	$("deck-count").value = catalog.defaults.decks;
-	$("joker-count").value = catalog.defaults.jokers;
+	applySetupDefaults();
 	playerRows = [];
 	rebuildPlayerRows();
 });

@@ -9,27 +9,24 @@
 		const RANDOM = "Random";
 		const CHARACTERS = {
 			Sukuna: [
-				{ ability: "Cleave", rules: ["Top card discard"], evolution: { ability: "Spider Net Cleave" } },
-				{ ability: "World Cutting Slash", evolution: { ability: "Waffle Cutting Slash" } },
+				{ ability: "Cleave", rules: ["Top card discard"], evolution: { ability: "Spider Net Cleave", rules: [] } },
+				{ ability: "World Cutting Slash", rules: [], evolution: { ability: "Waffle Cutting Slash", rules: [] } },
 				{ ability: "Enchain", rules: ["Soul Swap"], evolution: { ability: "Rule Workaround", rules: ["Soul Swap"] } },
-				{ ability: "Binding Vow", evolution: { ability: "Binding Vow Merchant" } },
-				{ ability: "God of Jujutsu" },
+				{ ability: "Binding Vow", rules: [], evolution: { ability: "Binding Vow Merchant", rules: [] } },
+				{ ability: "God of Jujutsu", rules: [] },
 			],
 			Gojo: [
-				{ ability: "Hollow Purple", rules: ["Stack destroy"], evolution: { ability: "Max Purple" } },
+				{ ability: "Hollow Purple", rules: ["Stack destroy"], evolution: { ability: "Max Purple", rules: [] } },
 				{ ability: "Limitless Barrier", rules: ["I-T"], evolution: { ability: "Perfected Limitless", rules: ["I-T", "Quick Grab"] } },
 				{ ability: "Lapse Blue", rules: ["Card Swapping", "Reveal"], evolution: { ability: "Reversal Red", rules: ["Card Swapping", "Rescue Draw"] } },
-				{ ability: "Six Eyes", evolution: { ability: "Mastered Six Eyes", rules: ["Full Hand"] } },
-				{ ability: "Simple Domain" },
+				{ ability: "Six Eyes", rules: [], evolution: { ability: "Mastered Six Eyes", rules: ["Full Hand"] } },
+				{ ability: "Simple Domain", rules: [] },
 			],
 		};
-		const characterCatalog = Object.entries(CHARACTERS).map(([name, tracks]) => ({
+		const characterNames = Object.keys(CHARACTERS);
+		const characterCatalog = characterNames.map((name) => ({
 			name,
-			tracks: tracks.map((track) => ({
-				ability: track.ability,
-				rules: track.rules || [],
-				evolution: track.evolution ? { ability: track.evolution.ability, rules: track.evolution.rules || [] } : undefined,
-			})),
+			tracks: CHARACTERS[name],
 		}));
 
 	const rankValue = (card, jokerValue = null) => card.rank === "Joker" ? (jokerValue || 14) : VALUES[card.rank];
@@ -54,7 +51,7 @@
 			shuffle(deck);
 			this.log = [];
 			this.players = rows.map((row, index) => {
-				const character = row.character === RANDOM ? Object.keys(CHARACTERS)[Math.floor(Math.random() * 2)] : row.character;
+				const character = row.character === RANDOM ? characterNames[Math.floor(Math.random() * characterNames.length)] : row.character;
 				return {
 					name: playerName(index, bots, humanCount), character, bot: bots[index],
 					hand: [], face_up: [], face_down: [], ability_states: Object.fromEntries(CHARACTERS[character].map((track) => [track.ability, { removed: false, evolved: false, uses: 0, round: 0 }])),

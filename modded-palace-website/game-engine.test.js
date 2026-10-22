@@ -31,7 +31,7 @@ test("catalog keeps gameplay metadata without embedding page descriptions", () =
 		&& (!track.evolution || typeof track.evolution.ability === "string" && Array.isArray(track.evolution.rules))
 		&& !Object.hasOwn(track, "description")
 		&& !Object.hasOwn(track.evolution || {}, "description"))));
-	assert.equal(catalog.defaults.players, 6);
+	assert.deepEqual(catalog.defaults, { players: 6, decks: 3, jokers: 8 });
 	assert.equal(Object.hasOwn(catalog, "rules"), false);
 	assert.equal(Object.hasOwn(catalog, "domain_rule"), false);
 	const indexHtml = fs.readFileSync(new URL("./index.html", `file://${__filename}`), "utf8");

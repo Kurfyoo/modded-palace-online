@@ -748,14 +748,6 @@ header {
 	background: var(--felt-light);
 }
 
-.dialog pre {
-	white-space: pre-wrap;
-	font: inherit;
-	max-height: 55vh;
-	overflow-y: auto;
-	margin: 0;
-}
-
 .handoff {
 	text-align: center;
 }
