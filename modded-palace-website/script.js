@@ -15,7 +15,6 @@ let setupSel = new Set();
 let confirmedViewer = null;
 let fastForward = false;
 let botTimer = null;
-let busy = false;
 let adminOpen = false;
 let playerRows = [];
 let appPage = "setup";
@@ -281,7 +280,6 @@ document.querySelectorAll(".open-admin").forEach((button) => button.addEventList
 // ---------------------------------------------------------------- bridge calls
 
 function send(action, answers = []) {
-	if (busy) return;
 	const result = JSON.parse(bridge.act(JSON.stringify({ ...action, answers })));
 	if (result.ask) {
 		showAsk(result.ask, answers, action);

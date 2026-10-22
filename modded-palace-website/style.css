@@ -89,9 +89,6 @@ main {
 .evolution p,
 .rule-links {
 	margin: 6px 0;
-}
-
-.rule-links {
 	font-size: 0.9rem;
 }
 
@@ -193,12 +190,6 @@ input[type=number] {
 .error {
 	color: #ff9c92;
 	min-height: 1.4em;
-}
-
-.rule {
-	text-decoration: underline;
-	cursor: pointer;
-	color: var(--gold);
 }
 
 .track {
@@ -757,10 +748,6 @@ header {
 	background: var(--felt-light);
 }
 
-.dialog .rule {
-	color: #7a5a10;
-}
-
 .dialog pre {
 	white-space: pre-wrap;
 	font: inherit;
@@ -771,16 +758,6 @@ header {
 
 .handoff {
 	text-align: center;
-}
-
-.plain {
-	white-space: pre-wrap;
-	font: inherit;
-	margin: 0;
-}
-
-#rules-content p {
-	line-height: 1.5;
 }
 
 .admin-editor {
@@ -860,17 +837,14 @@ header {
 
 	.discard-pile {
 		width: auto;
+		padding-left: 2px;
+		padding-right: 2px;
 	}
 
 	.pile-stack {
 		min-height: 118px;
 		gap: 4px;
 		padding: 5px;
-	}
-
-	.discard-pile {
-		padding-left: 2px;
-		padding-right: 2px;
 	}
 
 	.pile-label {
