@@ -18,6 +18,9 @@ let botTimer = null;
 let adminOpen = false;
 let playerRows = [];
 let appPage = "setup";
+let abilityTooltipTimer = null;
+let hoveredAbility = null;
+let tooltipPointer = { x: 0, y: 0 };
 
 const $ = (id) => document.getElementById(id);
 
@@ -61,6 +64,106 @@ function loadCharacterDescriptions() {
 	characterDescriptions = new Map(sheets.map((sheet) => [sheet.dataset.character, sheet]));
 	renderCharacterDetails();
 }
+
+function abilityDescription(button, buttons) {
+	const character = state.players[state.viewer].character;
+	const sheet = characterDescriptions?.get(character);
+	if (!sheet) return null;
+	const label = button.label.toLowerCase();
+	const tracks = [...sheet.querySelectorAll(".track")].map((track) => {
+		const title = track.querySelector(":scope > h3")?.textContent.trim();
+		const description = track.querySelector(":scope > p:not(.rule-links)")?.textContent.trim();
+		const evolutionTitle = track.querySelector(".evolution h4")?.textContent.trim();
+		const evolutionDescription = track.querySelector(".evolution p:not(.rule-links)")?.textContent.trim();
+		return { title, description, evolutionTitle, evolutionDescription };
+	});
+	const namedMatches = tracks.flatMap((track) => [
+		track.title && label.includes(track.title.toLowerCase())
+			? { title: track.title, description: track.description, match: track.title, track }
+			: null,
+		track.evolutionTitle && label.includes(track.evolutionTitle.toLowerCase())
+			? { title: track.evolutionTitle, description: track.evolutionDescription, match: track.evolutionTitle, track }
+			: null,
+	]).filter(Boolean).sort((a, b) => b.match.length - a.match.length);
+	if (namedMatches.length) {
+		const match = namedMatches[0];
+		if (match.title === match.track.title && match.track.evolutionTitle
+			&& buttons.some((item) => item.label.toLowerCase().includes(match.track.evolutionTitle.toLowerCase()))) {
+			return { title: match.track.evolutionTitle, description: match.track.evolutionDescription };
+		}
+		return match;
+	}
+
+	const ids = {
+		cleave: "Cleave",
+		enchain: "Enchain",
+		resolve_slash: "World Cutting Slash",
+		vow: "Binding Vow",
+		simple_domain: "Simple Domain",
+		god: "God of Jujutsu",
+		god_rule: "God of Jujutsu",
+		resolve_limitless: state.players[state.viewer].tags.includes("I-T permanent") ? "Perfected Limitless" : "Limitless Barrier",
+		full_hand: "Mastered Six Eyes",
+		six_eyes: buttons.some((item) => item.id === "full_hand") ? "Mastered Six Eyes" : "Six Eyes",
+		card_swap: button.label.includes("6/9") || buttons.some((item) => item.id === "rescue") ? "Reversal Red" : "Lapse Blue",
+		rescue: "Reversal Red",
+		quick_grab: "Perfected Limitless",
+	};
+	const title = ids[button.id];
+	if (!title) return null;
+	const match = tracks.find((track) => track.title === title || track.evolutionTitle === title);
+	if (!match) return null;
+	return {
+		title,
+		description: match.title === title ? match.description : match.evolutionDescription,
+	};
+}
+
+function positionAbilityTooltip() {
+	const tooltip = $("ability-tooltip");
+	const offset = 16;
+	const maxX = window.innerWidth - tooltip.offsetWidth - 8;
+	const maxY = window.innerHeight - tooltip.offsetHeight - 8;
+	tooltip.style.left = `${Math.max(8, Math.min(tooltipPointer.x + offset, maxX))}px`;
+	tooltip.style.top = `${Math.max(8, Math.min(tooltipPointer.y + offset, maxY))}px`;
+}
+
+function hideAbilityTooltip() {
+	clearTimeout(abilityTooltipTimer);
+	abilityTooltipTimer = null;
+	hoveredAbility = null;
+	$("ability-tooltip").hidden = true;
+}
+
+function showAbilityTooltip(target, event) {
+	hoveredAbility = target;
+	tooltipPointer = { x: event.clientX, y: event.clientY };
+	clearTimeout(abilityTooltipTimer);
+	abilityTooltipTimer = setTimeout(() => {
+		if (hoveredAbility !== target || !target.isConnected) return;
+		const tooltip = $("ability-tooltip");
+		tooltip.querySelector(".ability-tooltip-title").textContent = target.dataset.abilityTitle;
+		tooltip.querySelector(".ability-tooltip-description").textContent = target.dataset.abilityDescription;
+		tooltip.hidden = false;
+		positionAbilityTooltip();
+	}, 2000);
+}
+
+const actionArea = $("actions");
+actionArea.addEventListener("pointerover", (event) => {
+	const target = event.target.closest("[data-ability-title]");
+	if (!target || !actionArea.contains(target) || target === hoveredAbility) return;
+	showAbilityTooltip(target, event);
+});
+actionArea.addEventListener("pointerout", (event) => {
+	if (!hoveredAbility || hoveredAbility.contains(event.relatedTarget)) return;
+	hideAbilityTooltip();
+});
+actionArea.addEventListener("pointermove", (event) => {
+	if (!hoveredAbility?.contains(event.target)) return;
+	tooltipPointer = { x: event.clientX, y: event.clientY };
+	if (!$("ability-tooltip").hidden) positionAbilityTooltip();
+});
 
 function applySetupDefaults() {
 	$("player-count").value = catalog.defaults.players;
@@ -426,7 +529,7 @@ function renderPiles() {
 	st.draw_piles.forEach((count, index) => {
 		const container = index === 0 ? drawLeft : drawRight;
 		container.append(el("div", { class: "pile-stack draw-pile" },
-			el("strong", { class: "pile-label" }, `Draw pile ${index + 1}`),
+			el("strong", { class: "pile-label" }, `Draw Pile ${index + 1}`),
 			hiddenNode(index, null, { compact: true }),
 			el("small", { class: "pile-count" }, `${count} cards`)));
 	});
@@ -434,13 +537,13 @@ function renderPiles() {
 		topPiles.append(el("div", { class: "pile-stack collection-pile" },
 		el("strong", { class: "pile-label" }, title),
 		cards.length ? cardNode(cardFromLabel(cards.at(-1)), { compact: true }) : el("div", { class: "empty-card" }),
-		el("small", { class: "pile-count" }, `${cards.length} cards`),
+		el("small", { class: "pile-count" }, `${cards.length} Cards`),
 		el("button", {
 			class: "pile-view",
 			type: "button",
 			ariaLabel: `View ${title.toLowerCase()}`,
 			onclick: () => showDialog(title, cardGallery(cards), [{ label: "Close" }]),
-		}, "View pile")));
+		}, "View Pile")));
 	});
 	st.discards.forEach((pile, index) => {
 		const canPick = st.phase === "play" && st.me.is_current;
@@ -470,11 +573,11 @@ function renderPiles() {
 		node.append(el("strong", { class: "pile-label" }, `Discard Pile ${index + 1}`));
 		const select = el("div", { class: "discard-select" },
 		pile.top ? cardNode(cardFromLabel(pile.top), { compact: true }) : el("div", { class: "empty-card" }));
-		node.append(select, el("small", { class: "pile-count" }, `${pile.count} cards`));
+		node.append(select, el("small", { class: "pile-count" }, `${pile.count} Cards`));
 		const viewButton = el("button", { onclick: (event) => {
 			event.stopPropagation();
 			showDialog(`Discard Pile ${index + 1}`, cardGallery(pile.cards), [{ label: "Close" }]);
-		}, class: "pile-view" }, "View pile");
+		}, class: "pile-view" }, "View Pile");
 		node.append(viewButton);
 		discards.append(node);
 	});
@@ -533,6 +636,7 @@ function renderHand() {
 	const draw = $("draw-choice");
 	cards.replaceChildren();
 	actions.replaceChildren();
+	hideAbilityTooltip();
 	draw.replaceChildren();
 
 	if (st.phase === "over") {
@@ -548,7 +652,7 @@ function renderHand() {
 	}
 
 	if (st.phase === "setup") {
-		$("hand-title").textContent = `Choose Face-Ups | ${setupSel.size}/3`;
+		$("hand-title").textContent = `Choose face-ups | ${setupSel.size}/3`;
 		st.me.hand.forEach((card, index) => {
 			cards.append(cardNode(card, {
 				selected: setupSel.has(index),
@@ -567,7 +671,7 @@ function renderHand() {
 				setupSel = new Set();
 				send({ type: "setup", cards: picks });
 			},
-		}, "Set face-up cards"));
+		}, "Set face-ups"));
 		return;
 	}
 
@@ -620,16 +724,28 @@ function renderHand() {
 		return;
 	}
 	if (me.is_current && !revealing) {
-		actions.append(el("button", { disabled: !me.can_end, onclick: () => send({ type: "end_turn" }) }, "End turn"));
+		actions.append(el("button", { disabled: !me.can_end, onclick: () => send({ type: "end_turn" }) }, "End Turn"));
 	}
 	if (revealing) return;
 	st.buttons.forEach((button) => {
 		if (button.info) {
-			actions.append(el("span", { class: "info" }, button.label));
+			const node = el("span", { class: "info" }, button.label);
+			const ability = abilityDescription(button, st.buttons);
+			if (ability?.description) {
+				node.dataset.abilityTitle = ability.title;
+				node.dataset.abilityDescription = ability.description;
+			}
+			actions.append(node);
 			return;
 		}
 		const extra = button.id === "cleave" ? { pile: selPile } : {};
 		const enabled = button.enabled && (button.id !== "cleave" || (selPile !== null && st.discards[selPile].count > 0));
-		actions.append(el("button", { disabled: !enabled, onclick: () => send({ type: button.id, ...extra }) }, button.label));
+		const node = el("button", { disabled: !enabled, onclick: () => send({ type: button.id, ...extra }) }, button.label);
+		const ability = abilityDescription(button, st.buttons);
+		if (ability?.description) {
+			node.dataset.abilityTitle = ability.title;
+			node.dataset.abilityDescription = ability.description;
+		}
+		actions.append(node);
 	});
 }

@@ -497,22 +497,22 @@
 			if (cleave) {
 				const uses = p.ability_states.Cleave || { round: -1, uses: 0 };
 				const remaining = uses.round === g.round ? Math.max(0, (cleave === "Spider Net Cleave" ? 5 : 1) - uses.uses) : (cleave === "Spider Net Cleave" ? 5 : 1);
-				add("cleave", `Use ${cleave} (${remaining} left) - pick a discard pile first`, current && remaining > 0);
+				add("cleave", `${cleave} (${remaining} LEFT)`, current && remaining > 0);
 			}
-			if (g.effective(i, "World Cutting Slash")) add("info", `${g.effective(i, "World Cutting Slash")} active`, false, true);
-			if (g.effective(i, "Hollow Purple")) add("info", `${g.effective(i, "Hollow Purple")} active`, false, true);
-			if (this.humans().some((n) => this.canEnchain(n))) add("enchain", "Enchain / Rule Workaround (once per game)");
-			if (current && this.canCardSwap(i)) add("card_swap", `Card Swapping (${this.swapRanks(i).join("/") }s, once per round)`);
+			if (g.effective(i, "World Cutting Slash")) add("info", `${g.effective(i, "World Cutting Slash")} (ACTIVE)`, false, true);
+			if (g.effective(i, "Hollow Purple")) add("info", `${g.effective(i, "Hollow Purple")} (ACTIVE)`, false, true);
+			if (this.humans().some((n) => this.canEnchain(n))) add("enchain", "Enchain");
+			if (current && this.canCardSwap(i)) add("card_swap", `Lapse Blue`);
 			if (current && this.canRescue(i)) add("rescue", "Rescue Draw");
 			if (current && (g.effective(i, "Six Eyes") === "Six Eyes" || g.effective(i, "Six Eyes") === "Mastered Six Eyes") && p.six_eyes_turn !== g.turn) add("six_eyes", "Six Eyes");
 			if (current && g.hasRule(i, "Full Hand") && (p.face_up.length || p.face_down.length)) add("full_hand", "Full Hand");
 			if (g.domains.length) add("domain", "Domain (clash)");
-			if (g.effective(i, "Simple Domain") && !p.simple_domain_used) add("simple_domain", "Simple Domain (once per game)");
+			if (g.effective(i, "Simple Domain") && !p.simple_domain_used) add("simple_domain", "Simple Domain");
 			else if (g.effective(i, "Simple Domain") && p.simple_domain_active && p.cleanse_round !== g.round && p.hand.length && (p.cut_meter > 0 || p.revealed_cards.length)) add("simple_domain", "Simple Domain: discard a card to remove an effect");
-			if (current && g.effective(i, "God of Jujutsu") && p.god_round !== g.round) add("god", "God of Jujutsu (choose a rule for this round)");
-			if (current && p.god_rule && !["Stack destroy", "I-T", "Quick Grab", "Full Hand", "Rescue Draw", "Card Swapping"].includes(p.god_rule)) add("god_rule", `Use God of Jujutsu: ${p.god_rule}`);
+			if (current && g.effective(i, "God of Jujutsu") && p.god_round !== g.round) add("god", "God of Jujutsu");
+			if (current && p.god_rule && !["Stack destroy", "I-T", "Quick Grab", "Full Hand", "Rescue Draw", "Card Swapping"].includes(p.god_rule)) add("god_rule", `God of Jujutsu: ${p.god_rule}`);
 			if (p.god_rule) add("info", `God of Jujutsu: ${p.god_rule} this round`, false, true);
-			if (current && g.effective(i, "Binding Vow") && !p.vow_card && g.bindingVowCards(i).length) add("vow", "Binding Vow (pass turn, one card plays as a King)");
+			if (current && g.effective(i, "Binding Vow") && !p.vow_card && g.bindingVowCards(i).length) add("vow", "Binding Vow");
 			if (p.vow_card) add("info", `Binding Vow: ${cardText(p.vow_card)} plays as a King`, false, true);
 			if (current && p.pending_world_slashes) add("resolve_slash", `Resolve World Cutting Slash (${p.pending_world_slashes})`);
 			if (current && p.pending_limitless_effects.length) add("resolve_limitless", `Resolve Limitless effect (${p.pending_limitless_effects.length})`);
@@ -520,7 +520,7 @@
 				add("quick_grab", "Quick Grab the card");
 				add("decline_quick_grab", "Decline Quick Grab");
 			}
-			if (current && g.cards_played === 0 && this.evolvable(i).length && p.hand.some((c) => c.rank === "Joker")) add("evolve", "Evolve ability (ends turn): " + this.evolvable(i).map((t) => t.evolution.ability).join(", "));
+			if (current && g.cards_played === 0 && this.evolvable(i).length && p.hand.some((c) => c.rank === "Joker")) add("evolve", "Evolve Ability (Ends Turn)");
 			return buttons;
 		}
 		evolvable(i) {
@@ -1025,7 +1025,7 @@
 			for (let pile = 0; pile < 2; pile++) if (g.draw_piles[pile].length) zones.push({ zone: "draw_pile", pile, cards: g.draw_piles[pile] });
 			if (!zones.length) { p.pending_world_slashes = 0; return; }
 			const selected = zones[this.ask("World Cutting Slash: choose a card or pile to delete", zones.map((row) => {
-				const label = row.zone === "discard_pile" ? `Discard pile ${row.pile + 1}` : row.zone === "destroyed_pile" ? "Destroyed pile" : row.zone === "draw_pile" ? `Draw pile ${row.pile + 1} (random)` : `${g.players[row.owner].name}'s ${row.zone.replace("_", " ")}`;
+				const label = row.zone === "discard_pile" ? `Discard pile ${row.pile + 1}` : row.zone === "destroyed_pile" ? "Destroyed pile" : row.zone === "draw_pile" ? `Draw Pile ${row.pile + 1} (random)` : `${g.players[row.owner].name}'s ${row.zone.replace("_", " ")}`;
 				return `${label} (${row.cards.length})`;
 			}), answers)];
 			let cardIndex = null;
@@ -1090,7 +1090,7 @@
 	const adminZones = () => {
 		const g = bridge.game, zones = [];
 		for (const p of g.players) for (const zone of ["hand", "face_up", "face_down"]) zones.push([`${p.name} / ${zone.replace("_", " ")}`, p[zone], "player", null]);
-		for (let i = 0; i < 2; i++) zones.push([`Draw pile ${i + 1}`, g.draw_piles[i], "draw_pile", i]);
+		for (let i = 0; i < 2; i++) zones.push([`Draw Pile ${i + 1}`, g.draw_piles[i], "draw_pile", i]);
 		for (let i = 0; i < 2; i++) zones.push([`Discard pile ${i + 1}`, g.discards[i], "discard_pile", i]);
 		zones.push(["Destroyed pile", g.destroyed, "destroyed_pile", null], ["Deleted pile", g.deleted, "deleted_pile", null]);
 		return zones;

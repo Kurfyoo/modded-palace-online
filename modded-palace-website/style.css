@@ -187,6 +187,35 @@ input[type=number] {
 	font-size: 0.9em;
 }
 
+.ability-tooltip {
+	position: fixed;
+	z-index: 10;
+	width: min(320px, calc(100vw - 24px));
+	padding: 10px 12px;
+	border: 1px solid var(--gold);
+	border-radius: 6px;
+	background: #142a25;
+	color: var(--cream);
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+	pointer-events: none;
+}
+
+.ability-tooltip-title {
+	display: block;
+	margin-bottom: 4px;
+	color: var(--gold);
+}
+
+.ability-tooltip-description {
+	display: -webkit-box;
+	margin: 0;
+	overflow: hidden;
+	line-height: 1.4;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 5;
+	line-clamp: 5;
+}
+
 .error {
 	color: #ff9c92;
 	min-height: 1.4em;
