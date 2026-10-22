@@ -428,6 +428,21 @@ header {
 	margin-top: 6px;
 }
 
+.player-zones > .zone-hand,
+.own-card-zones > .zone-hand {
+	grid-row: 1;
+}
+
+.player-zones > .zone-face-up,
+.own-card-zones > .zone-face-up {
+	grid-row: 2;
+}
+
+.player-zones > .zone-face-down,
+.own-card-zones > .zone-face-down {
+	grid-row: 3;
+}
+
 .player-zone {
 	min-width: 0;
 	text-align: center;

@@ -487,8 +487,8 @@ function selectPlayCard(index) {
 	render();
 }
 
-function playerZone(title, count, cards) {
-	return el("div", { class: "player-zone" },
+function playerZone(title, count, cards, zone) {
+	return el("div", { class: `player-zone zone-${zone}` },
 		el("span", { class: "zone-label" }, title ? `${title} · ${count}` : `${count} cards`),
 		cards.length
 			? el("div", { class: "mini-cards" }, ...cards)
@@ -507,9 +507,9 @@ function renderPlayers() {
 		const faceDownCards = player.seen.map((label) => cardNode(cardFromLabel(label), { compact: true }));
 		faceDownCards.push(...Array.from({ length: Math.min(Math.max(0, player.face_down - player.seen.length), 3) }, (_, index) => hiddenNode(index, null, { compact: true })));
 		const zones = [
-			playerZone("Hand", player.hand, handBacks),
-			playerZone("Face-Up", player.face_up.length, player.face_up.map((card) => cardNode(card, { compact: true }))),
-			playerZone(player.seen.length ? "Face-Down / seen" : "Face-Down", player.face_down, faceDownCards),
+			playerZone("Hand", player.hand, handBacks, "hand"),
+			playerZone("Face-Up", player.face_up.length, player.face_up.map((card) => cardNode(card, { compact: true })), "face-up"),
+			playerZone(player.seen.length ? "Face-Down / seen" : "Face-Down", player.face_down, faceDownCards, "face-down"),
 		];
 		const node = el("div", { class: "player" + (player.current ? " current" : "") },
 			el("strong", { class: "player-name" }, player.name),
@@ -594,9 +594,9 @@ function renderHand() {
 		return hiddenNode(index, card.known, options);
 	});
 	cards.append(el("div", { class: "own-card-zones" },
-		playerZone("Hand", me.hand.length, handCards),
-		playerZone("Face-Up", me.face_up.length, faceUpCards),
-		playerZone("Face-Down", me.face_down.length, faceDownCards)));
+		playerZone("Hand", me.hand.length, handCards, "hand"),
+		playerZone("Face-Up", me.face_up.length, faceUpCards, "face-up"),
+		playerZone("Face-Down", me.face_down.length, faceDownCards, "face-down")));
 
 	if (st.draw_choice) {
 		draw.append(el("p", { class: "draw-prompt" }, "Mastered Six Eyes: choose a card to draw."));
